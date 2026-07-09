@@ -29,8 +29,15 @@ INDEX_HTML = r"""<!doctype html>
   .logo span { background: linear-gradient(90deg, var(--accent), var(--accent-2));
     -webkit-background-clip: text; background-clip: text; color: transparent; }
   .tag { color: var(--muted); font-size: 13px; }
+  .hstats { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+  .forget {
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    border-radius: 999px; padding: 6px 12px; font-size: 12.5px; cursor: pointer;
+    transition: .15s;
+  }
+  .forget:hover { border-color: #ff5c5c; color: #ff5c5c; }
   .badge {
-    margin-left: auto; display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 8px;
     padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
     font-size: 12.5px; color: var(--good); background: rgba(55,211,155,.06);
   }
@@ -90,6 +97,8 @@ INDEX_HTML = r"""<!doctype html>
 <header>
   <div class="logo">Hind<span>sight</span></div>
   <div class="tag">your PC's memory · stays on your PC</div>
+  <div class="hstats" id="hstats"></div>
+  <button class="forget" id="forget" title="Permanently delete every stored memory">Forget all</button>
   <div class="badge" id="badge"><span class="dot" id="dot"></span><span id="badgetext">checking…</span></div>
 </header>
 <main>
@@ -124,6 +133,19 @@ async function health() {
 }
 health(); setInterval(health, 8000);
 
+async function refreshStats(){
+  try { const r = await fetch('/api/stats'); const j = await r.json();
+    $('#hstats').textContent = (j.memoryCount || 0) + ' memories remembered';
+  } catch {}
+}
+refreshStats(); setInterval(refreshStats, 8000);
+$('#forget').onclick = async () => {
+  if(!confirm('Permanently delete every stored memory? This cannot be undone.')) return;
+  await fetch('/api/forget_all', {method:'POST'});
+  thread.innerHTML=''; $('#hero').style.display='';
+  refreshStats();
+};
+
 const KIND_ICON = { clipboard:'📋', window:'🪟', browser:'🌐', ocr:'👁️' };
 function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
@@ -139,7 +161,7 @@ function addAI(){
 }
 function renderEvidence(ev){
   if(!ev || !ev.length) return '';
-  const rows = ev.slice(0,8).map(e => {
+  const rows = ev.slice(0,6).map(e => {
     const k = e.kind || 'window';
     const when = e.captured_at ? new Date(e.captured_at).toLocaleString() : '';
     const src = e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noreferrer">${esc(e.source)}</a>` : esc(e.source);

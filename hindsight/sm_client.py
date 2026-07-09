@@ -68,6 +68,39 @@ class SupermemoryClient:
         r.raise_for_status()
         return r.json()
 
+    def stats(self) -> dict:
+        """Return {memoryCount, byKind} for our container.
+
+        Counts via /v4/memories/list (the source of truth for directly
+        inserted memories) and tallies a breakdown by capture kind.
+        """
+        by_kind: dict[str, int] = {}
+        total = 0
+        try:
+            r = self._http.post(
+                "/v4/memories/list",
+                json={"containerTags": [self.container_tag], "limit": 200},
+            )
+            r.raise_for_status()
+            body = r.json()
+            entries = body.get("memoryEntries", []) if isinstance(body, dict) else []
+            total = (body.get("pagination", {}) or {}).get("totalItems", len(entries))
+            for m in entries:
+                kind = (m.get("metadata") or {}).get("kind", "other")
+                by_kind[kind] = by_kind.get(kind, 0) + 1
+        except httpx.HTTPError:
+            pass
+        return {"memoryCount": total, "byKind": by_kind}
+
+    def forget_all(self) -> dict:
+        """Delete every memory in our container (the panic button)."""
+        r = self._http.request(
+            "DELETE", "/v3/documents/bulk",
+            json={"containerTags": [self.container_tag]},
+        )
+        r.raise_for_status()
+        return r.json()
+
     def ping(self) -> bool:
         try:
             r = self._http.get("/", timeout=3.0)

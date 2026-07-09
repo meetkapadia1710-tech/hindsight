@@ -52,19 +52,35 @@ Supermemory Local makes that possible: embeddings, storage, and hybrid semantic 
 
 ## Quickstart
 
-```bash
-# 1. Start Supermemory Local (one binary)
-npx supermemory local        # → http://localhost:6767
+Supermemory Local's binary is Linux/macOS-only, so on Windows it runs inside
+WSL2 while Hindsight runs natively. Full steps are in [SETUP.md](SETUP.md);
+the short version:
 
-# 2. Install & run Hindsight
+```powershell
+# 1. One-time: install the Linux side (Supermemory Local + Ollama) in WSL2
+#    → see SETUP.md
+
+# 2. Start the server (boots Supermemory + Ollama in WSL, writes the API key)
+scripts\start_supermemory.ps1        # → http://localhost:6767
+
+# 3. Install & run Hindsight (native Windows)
 pip install -r requirements.txt
-python -m hindsight.capture   # start remembering
-python -m hindsight.app       # ask questions → http://localhost:8787
+py -m hindsight.capture              # start remembering  (Ctrl+Break pauses)
+py -m hindsight.app                  # ask questions → http://localhost:8787
 ```
 
 ## How it uses Supermemory Local
 
-Every captured event (window focus, clipboard snippet, page visit, OCR text) becomes a document via `POST /v3/documents` with rich metadata (timestamp, source app, url). Questions hit `POST /v3/search` (hybrid semantic search) and the top memories are synthesized into an answer by a local model — with an evidence timeline so you can verify every claim. Supermemory Local isn't a feature of Hindsight; it's the reason Hindsight can exist.
+Every captured event (window focus, clipboard snippet, page visit, optional
+OCR text) is phrased as a factual sentence and stored as a memory via
+Supermemory Local's `POST /v4/memories` — embedded **on-device** (the bundled
+`bge` model) into Supermemory's encrypted local store. Questions hit
+`POST /v4/search` for hybrid semantic recall, and the top memories are
+synthesized into a cited answer by a local model (Ollama), with an evidence
+timeline so you can verify every claim. Storage, embeddings, and search all
+run on `localhost:6767` — nothing leaves the machine, so it keeps working
+with the Wi‑Fi off. Supermemory Local isn't a feature of Hindsight; it's the
+reason Hindsight can exist.
 
 ## Team
 

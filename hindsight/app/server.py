@@ -22,7 +22,7 @@ client = SupermemoryClient()
 
 class AskRequest(BaseModel):
     question: str
-    limit: int = 10
+    limit: int = 6
 
 
 def _clean(text: str) -> str:
@@ -88,6 +88,19 @@ def index() -> str:
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     return {"ok": client.ping(), "base_url": client.base_url}
+
+
+@app.get("/api/stats")
+def stats() -> dict[str, Any]:
+    return client.stats()
+
+
+@app.post("/api/forget_all")
+def forget_all() -> JSONResponse:
+    try:
+        return JSONResponse(client.forget_all())
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=502)
 
 
 @app.post("/api/ask")
