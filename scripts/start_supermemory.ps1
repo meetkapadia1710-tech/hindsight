@@ -14,13 +14,16 @@ $envFile = Join-Path $root ".env"
 
 Write-Host "[hindsight] ensuring Ollama + Supermemory are running in $Distro..." -ForegroundColor Cyan
 
-# Launch a detached, windowless WSL session that keeps both processes alive.
-# ollama serve runs in the background; supermemory-server runs in the
-# foreground so the session (and the WSL instance) stays up with it.
+# Launch a detached, windowless WSL session that keeps the server alive.
+# Ollama runs as a systemd service (auto-started); we make sure it's up, then
+# source the env file (Ollama endpoint, data dir, port) and exec the server in
+# the foreground so the WSL instance stays alive with it. Note: the process
+# name is truncated to 15 chars, so we match "supermemory-ser".
 $launch = @'
-pgrep -x ollama >/dev/null || nohup ollama serve >/root/ollama.log 2>&1 &
-sleep 2
-pgrep -x supermemory-server >/dev/null || exec /root/.local/bin/supermemory-server >/root/sm.log 2>&1
+pgrep -x supermemory-ser >/dev/null && exit 0
+systemctl start ollama 2>/dev/null || (pgrep -x ollama >/dev/null || nohup ollama serve >/root/ollama.log 2>&1 &)
+set -a; . /root/.supermemory/env; set +a
+exec /root/.supermemory/bin/supermemory-server >/root/sm.log 2>&1
 '@
 Start-Process -WindowStyle Hidden -FilePath "wsl.exe" `
   -ArgumentList @("-d", $Distro, "-u", "root", "--", "bash", "-lc", $launch)
