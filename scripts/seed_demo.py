@@ -9,13 +9,11 @@ container's memoryCount) before querying.
 """
 
 import sys
-import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from hindsight.config import CONFIG  # noqa: E402
 from hindsight.capture.ingest import phrase_event  # noqa: E402
 from hindsight.sm_client import SupermemoryClient  # noqa: E402
 
@@ -42,18 +40,19 @@ def main() -> int:
     if not c.ping():
         print("Supermemory Local not reachable on", c.base_url)
         return 1
-    ctx = CONFIG.get("memory", {}).get("entity_context")
     now = datetime.now(timezone.utc)
+    batch = []
     for hours_ago, kind, raw, source in SEED:
         ts = (now - timedelta(hours=hours_ago)).isoformat()
-        content = phrase_event(kind, raw, source, ts)
-        c.add(content, metadata={"kind": kind, "source": source,
-                                 "captured_at": ts, "title": raw},
-              entity_context=ctx)
+        batch.append({
+            "content": phrase_event(kind, raw, source, ts),
+            "metadata": {"kind": kind, "source": source,
+                         "captured_at": ts, "title": raw},
+        })
         print(f"  + {kind:9} {raw[:58]}")
-        time.sleep(0.2)
-    print(f"\nSeeded {len(SEED)} memories. The memory agent is processing them")
-    print("asynchronously — watch memoryCount via /v3/container-tags/list.")
+    c.add_memories(batch)
+    print(f"\nSeeded {len(SEED)} memories directly (embedded locally, "
+          "instantly searchable).")
     return 0
 
 

@@ -12,7 +12,6 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from ..config import CONFIG
 from ..sm_client import SupermemoryClient
 
 
@@ -96,9 +95,8 @@ class Ingestor:
             "title": event.content,   # the raw captured text, for display
             **event.metadata,
         }
-        entity_context = CONFIG.get("memory", {}).get("entity_context")
         try:
-            self._client.add(content, metadata=metadata, entity_context=entity_context)
+            self._client.add_memory(content, metadata=metadata)
             self.sent += 1
         except Exception as exc:  # keep the daemon alive on transient errors
             self.failed += 1

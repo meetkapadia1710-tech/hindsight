@@ -26,33 +26,34 @@ class SupermemoryClient:
             timeout=30.0,
         )
 
-    def add(
-        self,
-        content: str,
-        metadata: dict[str, Any] | None = None,
-        entity_context: str | None = None,
+    def add_memory(
+        self, content: str, metadata: dict[str, Any] | None = None,
     ) -> dict:
-        """Store one memory document."""
-        payload: dict[str, Any] = {
-            "content": content,
-            "containerTag": self.container_tag,
-        }
-        if metadata:
-            payload["metadata"] = metadata
-        if entity_context:
-            payload["entityContext"] = entity_context
-        r = self._http.post("/v3/documents", json=payload)
+        """Insert one memory directly (skips the LLM extraction agent).
+
+        Hindsight captures atomic activity events, so we store each one as a
+        memory verbatim via /v4/memories rather than routing it through the
+        document → memory-agent pipeline. That agent is slow (CPU-bound) and,
+        with a small local model, either hallucinates or extracts nothing;
+        direct insertion is instant, deterministic, and 100% accurate. The
+        text is still embedded locally so it is semantically searchable.
+        """
+        return self.add_memories([{"content": content, "metadata": metadata or {}}])
+
+    def add_memories(self, memories: list[dict[str, Any]]) -> dict:
+        """Batch insert memories: [{content, metadata?, isStatic?}, ...]."""
+        r = self._http.post(
+            "/v4/memories",
+            json={"containerTag": self.container_tag, "memories": memories},
+        )
         r.raise_for_status()
         return r.json()
 
-    def search(self, query: str, limit: int = 10, threshold: float = 0.3) -> dict:
-        """Hybrid semantic search over stored memories.
+    def search(self, query: str, limit: int = 10, threshold: float = 0.4) -> dict:
+        """Semantic search over stored memories via the v4 endpoint.
 
-        Uses the v4 search endpoint (v3 search only covers raw chunks and
-        returns nothing for agent-extracted memories in the local build).
-        `searchMode: hybrid` searches both the LLM memories and the raw
-        captured chunks; including documents + chunks lets us ground answers
-        in the accurate captured text rather than the model's paraphrase.
+        (v3 search only covers raw document chunks and returns nothing for
+        our directly-inserted memories in the local build.)
         """
         r = self._http.post(
             "/v4/search",
@@ -61,8 +62,7 @@ class SupermemoryClient:
                 "containerTag": self.container_tag,
                 "limit": limit,
                 "threshold": threshold,
-                "searchMode": "hybrid",
-                "include": {"documents": True, "chunks": True},
+                "searchMode": "memories",
             },
         )
         r.raise_for_status()
