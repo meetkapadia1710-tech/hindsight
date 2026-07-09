@@ -26,7 +26,12 @@ class SupermemoryClient:
             timeout=30.0,
         )
 
-    def add(self, content: str, metadata: dict[str, Any] | None = None) -> dict:
+    def add(
+        self,
+        content: str,
+        metadata: dict[str, Any] | None = None,
+        entity_context: str | None = None,
+    ) -> dict:
         """Store one memory document."""
         payload: dict[str, Any] = {
             "content": content,
@@ -34,15 +39,31 @@ class SupermemoryClient:
         }
         if metadata:
             payload["metadata"] = metadata
+        if entity_context:
+            payload["entityContext"] = entity_context
         r = self._http.post("/v3/documents", json=payload)
         r.raise_for_status()
         return r.json()
 
-    def search(self, query: str, limit: int = 10) -> dict:
-        """Hybrid semantic search over stored memories."""
+    def search(self, query: str, limit: int = 10, threshold: float = 0.3) -> dict:
+        """Hybrid semantic search over stored memories.
+
+        Uses the v4 search endpoint (v3 search only covers raw chunks and
+        returns nothing for agent-extracted memories in the local build).
+        `searchMode: hybrid` searches both the LLM memories and the raw
+        captured chunks; including documents + chunks lets us ground answers
+        in the accurate captured text rather than the model's paraphrase.
+        """
         r = self._http.post(
-            "/v3/search",
-            json={"q": query, "containerTag": self.container_tag, "limit": limit},
+            "/v4/search",
+            json={
+                "q": query,
+                "containerTag": self.container_tag,
+                "limit": limit,
+                "threshold": threshold,
+                "searchMode": "hybrid",
+                "include": {"documents": True, "chunks": True},
+            },
         )
         r.raise_for_status()
         return r.json()

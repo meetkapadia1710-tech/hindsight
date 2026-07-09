@@ -35,7 +35,12 @@ max_clipboard_chars = 2000
 [answer]
 # Local answer engine. Tries Ollama first, falls back to extractive summary.
 ollama_url = "http://localhost:11434"
-ollama_model = "llama3.2:3b"
+ollama_model = "qwen2.5:3b-instruct"
+
+[memory]
+# entityContext sent with every document to anchor Supermemory's memory agent
+# so it records grounded facts about the user's activity and never invents.
+entity_context = "These are personal-computer activity records for one user. Each document states one concrete thing the user viewed, opened, copied, or did, with the app or website and the time. Extract exactly one concise factual memory that restates what the user did, using only facts present in the text. Never invent people, places, purchases, events, or preferences."
 
 [app]
 host = "127.0.0.1"

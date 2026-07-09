@@ -31,7 +31,7 @@ def build_context(memories: list[dict[str, Any]]) -> str:
     for i, m in enumerate(memories, 1):
         ts = m.get("captured_at", "")
         src = m.get("source", "")
-        content = m.get("content", "")
+        content = m.get("content", "")   # accurate captured text
         lines.append(f"{i}. [{ts}] ({src}) {content}")
     return "\n".join(lines)
 

@@ -25,39 +25,57 @@ class AskRequest(BaseModel):
     limit: int = 10
 
 
-def _normalize_results(raw: dict[str, Any]) -> list[dict[str, Any]]:
-    """Flatten a Supermemory search response into a list of memory dicts.
+def _clean(text: str) -> str:
+    """Strip the '[Kind] ... (source: ...)' wrapper we add at capture time so
+    the UI shows just the human-readable activity."""
+    import re
+    text = re.sub(r"^\[[^\]]+\]\s*", "", text or "")
+    text = re.sub(r"\s*\(source:[^)]*\)\s*$", "", text)
+    return text.strip()
 
-    Defensive about the exact response shape — different versions nest the
-    hits under `results`, `documents`, or `memories`, and metadata may be a
-    sibling of the content or embedded within it.
+
+def _normalize_results(raw: dict[str, Any]) -> list[dict[str, Any]]:
+    """Flatten a v4 hybrid-search response into memory dicts for the UI.
+
+    Each v4 result carries the model's `memory` plus the accurate captured
+    text under `chunks[].content` / `documents[].title`. We surface the
+    accurate text as `content` (grounding), keep `memory` as a secondary
+    interpretation, and pull source/kind/time from the metadata we stored.
     """
-    hits = (
-        raw.get("results")
-        or raw.get("documents")
-        or raw.get("memories")
-        or raw.get("data")
-        or []
-    )
+    hits = raw.get("results") or raw.get("data") or []
     out: list[dict[str, Any]] = []
+    seen: dict[str, int] = {}   # dedup key -> index in out
     for h in hits:
         if not isinstance(h, dict):
             continue
         meta = h.get("metadata") or {}
-        content = (
-            h.get("content")
-            or h.get("text")
-            or h.get("chunk")
-            or h.get("memory")
-            or ""
-        )
+        chunks = h.get("chunks") or []
+        docs = h.get("documents") or []
+        # Prefer the exact captured text we stored; fall back to chunk/title.
+        accurate = meta.get("title") or ""
+        if not accurate and chunks and isinstance(chunks[0], dict):
+            accurate = _clean(chunks[0].get("content") or "")
+        if not accurate and docs and isinstance(docs[0], dict):
+            accurate = _clean(docs[0].get("title") or "")
+        memory = h.get("memory") or ""
+        source = meta.get("source") or ""
+        content = accurate or _clean(memory)
+        score = round(float(h.get("similarity") or h.get("score") or 0), 3)
+
+        key = f"{content}::{source}".lower()
+        if key in seen:  # collapse duplicate memories from the same event
+            if score > out[seen[key]]["score"]:
+                out[seen[key]]["score"] = score
+            continue
+        seen[key] = len(out)
         out.append({
             "content": content,
-            "source": meta.get("source") or h.get("source") or "",
+            "memory": memory,
+            "source": source,
             "kind": meta.get("kind") or "",
-            "captured_at": meta.get("captured_at") or h.get("createdAt") or "",
-            "score": h.get("score") or h.get("similarity") or 0,
-            "url": meta.get("url") or "",
+            "captured_at": meta.get("captured_at") or h.get("updatedAt") or "",
+            "score": score,
+            "url": source if str(source).startswith("http") else "",
         })
     return out
 

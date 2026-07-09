@@ -12,7 +12,38 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+from ..config import CONFIG
 from ..sm_client import SupermemoryClient
+
+
+def _friendly(ts: str) -> str:
+    try:
+        return datetime.fromisoformat(ts).astimezone().strftime(
+            "%A, %B %d, %Y at %I:%M %p"
+        )
+    except (ValueError, TypeError):
+        return ts
+
+
+def phrase_event(kind: str, content: str, source: str, ts: str) -> str:
+    """Render an event as an explicit factual sentence.
+
+    The memory agent extracts grounded facts from explicit statements but
+    invents details from terse fragments, so we spell each event out fully.
+    """
+    when = _friendly(ts)
+    if kind == "browser":
+        where = f" at {source}" if source else ""
+        return f'On {when}, the user visited the web page titled "{content}"{where}.'
+    if kind == "window":
+        app = f" in the application {source}" if source else ""
+        return f'On {when}, the user had the window "{content}" open{app}.'
+    if kind == "clipboard":
+        return f'On {when}, the user copied this text to the clipboard: "{content}".'
+    if kind == "ocr":
+        app = f" in {source}" if source else ""
+        return f'On {when}, this text was visible on the user\'s screen{app}: "{content}".'
+    return f"On {when}, the user did: {content}."
 
 
 @dataclass
@@ -57,23 +88,17 @@ class Ingestor:
 
     def _send(self, event: Event) -> None:
         # Prefix makes memories self-describing and improves retrieval.
-        prefix = {
-            "window": "Active window",
-            "clipboard": "Copied to clipboard",
-            "browser": "Visited page",
-            "ocr": "On screen",
-        }.get(event.kind, event.kind)
-        content = f"[{prefix}] {event.content}"
-        if event.source:
-            content += f" (source: {event.source})"
+        content = phrase_event(event.kind, event.content, event.source, event.ts)
         metadata = {
             "kind": event.kind,
             "source": event.source,
             "captured_at": event.ts,
+            "title": event.content,   # the raw captured text, for display
             **event.metadata,
         }
+        entity_context = CONFIG.get("memory", {}).get("entity_context")
         try:
-            self._client.add(content, metadata=metadata)
+            self._client.add(content, metadata=metadata, entity_context=entity_context)
             self.sent += 1
         except Exception as exc:  # keep the daemon alive on transient errors
             self.failed += 1
