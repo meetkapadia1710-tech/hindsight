@@ -1,0 +1,142 @@
+"""Hindsight capture daemon.
+
+Polls the foreground window and clipboard, applies privacy filters, and
+streams events into Supermemory Local. Periodically syncs browser history.
+
+Run with:  python -m hindsight.capture
+"""
+
+from __future__ import annotations
+
+import signal
+import sys
+import time
+
+from ..config import CONFIG
+from ..sm_client import SupermemoryClient
+from . import privacy
+from .clipboard import ClipboardWatcher
+from .ingest import Event, Ingestor
+from .window import get_foreground_window
+
+
+class CaptureDaemon:
+    def __init__(self) -> None:
+        cap = CONFIG["capture"]
+        self.poll_interval = float(cap["poll_interval_seconds"])
+        self.min_focus = float(cap["min_focus_seconds"])
+        self.do_clipboard = bool(cap["clipboard"])
+        self.do_windows = bool(cap["windows"])
+        self.do_browser = bool(cap["browser_history"])
+        self.browser_sync = float(cap["browser_sync_minutes"]) * 60
+
+        self.client = SupermemoryClient()
+        self.ingestor = Ingestor(self.client, float(cap["batch_flush_seconds"]))
+        self.clipboard = ClipboardWatcher()
+
+        self._paused = False
+        self._running = True
+        self._last_window_key: str | None = None
+        self._window_since = 0.0
+        self._window_committed = False
+        self._last_browser_sync = 0.0
+
+    # -- lifecycle ---------------------------------------------------------
+    def run(self) -> None:
+        if not self.client.ping():
+            print(
+                "[hindsight] cannot reach Supermemory Local at "
+                f"{self.client.base_url}. Start it with `npx supermemory local`.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        self.ingestor.start()
+        self._install_signal_handlers()
+        print(f"[hindsight] capturing → {self.client.base_url} "
+              f"(container: {self.client.container_tag})")
+        print("[hindsight] Ctrl+C to stop. Send SIGBREAK to toggle pause.")
+
+        try:
+            while self._running:
+                if not self._paused:
+                    self._tick()
+                time.sleep(self.poll_interval)
+        finally:
+            self.ingestor.stop()
+            print(f"[hindsight] stopped. stored={self.ingestor.sent} "
+                  f"failed={self.ingestor.failed}")
+
+    def _tick(self) -> None:
+        now = time.monotonic()
+        if self.do_windows:
+            self._tick_window(now)
+        if self.do_clipboard:
+            self._tick_clipboard()
+        if self.do_browser and (now - self._last_browser_sync) >= self.browser_sync:
+            self._tick_browser()
+            self._last_browser_sync = now
+
+    # -- window ------------------------------------------------------------
+    def _tick_window(self, now: float) -> None:
+        win = get_foreground_window()
+        key = f"{win.app}::{win.title}" if win else None
+
+        if key != self._last_window_key:
+            # Focus changed; start timing the new window.
+            self._last_window_key = key
+            self._window_since = now
+            self._window_committed = False
+            return
+
+        if win is None or self._window_committed:
+            return
+
+        # Same window still focused — commit once it clears the dwell time.
+        if (now - self._window_since) >= self.min_focus:
+            self._window_committed = True
+            if privacy.window_allowed(win.app, win.title):
+                self.ingestor.submit(Event(
+                    kind="window", content=win.title, source=win.app,
+                    metadata={"app": win.app},
+                ))
+
+    # -- clipboard ---------------------------------------------------------
+    def _tick_clipboard(self) -> None:
+        text = self.clipboard.poll()
+        if text and privacy.clipboard_allowed(text):
+            preview = text if len(text) <= 280 else text[:277] + "..."
+            self.ingestor.submit(Event(kind="clipboard", content=preview))
+
+    # -- browser -----------------------------------------------------------
+    def _tick_browser(self) -> None:
+        try:
+            from .browser import sync_browser_history
+        except Exception as exc:
+            print(f"[hindsight] browser module unavailable: {exc}")
+            return
+        count = sync_browser_history(self.ingestor)
+        if count:
+            print(f"[hindsight] synced {count} browser visits")
+
+    # -- control -----------------------------------------------------------
+    def _toggle_pause(self, *_: object) -> None:
+        self._paused = not self._paused
+        print(f"[hindsight] {'PAUSED' if self._paused else 'RESUMED'} capture")
+
+    def _stop(self, *_: object) -> None:
+        self._running = False
+
+    def _install_signal_handlers(self) -> None:
+        signal.signal(signal.SIGINT, self._stop)
+        signal.signal(signal.SIGTERM, self._stop)
+        if hasattr(signal, "SIGBREAK"):  # Windows: Ctrl+Break toggles pause
+            signal.signal(signal.SIGBREAK, self._toggle_pause)
+
+
+def main() -> None:
+    CaptureDaemon().run()
+
+
+if __name__ == "__main__":
+    main()
