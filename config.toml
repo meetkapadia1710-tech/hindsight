@@ -1,0 +1,42 @@
+# Hindsight configuration
+
+[supermemory]
+base_url = "http://localhost:6767"
+# API key is read from the SUPERMEMORY_API_KEY env var or .env file
+container_tag = "hindsight"
+
+[capture]
+poll_interval_seconds = 2.0     # foreground window poll
+min_focus_seconds = 4           # ignore windows focused less than this
+batch_flush_seconds = 30        # max time an event waits before ingestion
+clipboard = true
+windows = true
+browser_history = true
+browser_sync_minutes = 5
+
+[privacy]
+# Windows whose title or process matches any entry are NEVER captured.
+excluded_processes = [
+    "KeePass.exe", "1Password.exe", "Bitwarden.exe", "ProtonPass.exe",
+]
+excluded_title_keywords = [
+    "InPrivate", "Incognito", "Private Browsing", "password", "passphrase",
+]
+# Clipboard entries matching these patterns are dropped (secrets).
+clipboard_deny_patterns = [
+    "^sm_",                     # supermemory api keys :)
+    "^sk-",                     # openai-style keys
+    "^ghp_", "^github_pat_",    # github tokens
+    "^AKIA",                    # aws access keys
+    "-----BEGIN .*PRIVATE KEY",
+]
+max_clipboard_chars = 2000
+
+[answer]
+# Local answer engine. Tries Ollama first, falls back to extractive summary.
+ollama_url = "http://localhost:11434"
+ollama_model = "llama3.2:3b"
+
+[app]
+host = "127.0.0.1"
+port = 8787
