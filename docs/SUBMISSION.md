@@ -14,7 +14,7 @@ Deadline: **Sunday, July 13, 2026 · 23:59 PST**. Both steps required:
 
 **Team:** Meet Kapadia (solo)
 
-**Repo:** <REPO_URL>
+**Repo:** https://github.com/meetkapadia1710-tech/hindsight
 
 **Demo video:** <VIDEO_URL>
 
@@ -36,7 +36,7 @@ Hindsight captures your computer activity — active window titles, clipboard, a
   localhost:6767 / :11434 / :8787.
 - **What's new / built during the window:** everything in the repo (see commit
   history July 9–13).
-- **Repo:** <REPO_URL>
+- **Repo:** https://github.com/meetkapadia1710-tech/hindsight
 - **Demo video:** <VIDEO_URL>
 
 ---
