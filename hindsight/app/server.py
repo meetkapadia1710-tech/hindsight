@@ -69,6 +69,7 @@ def _normalize_results(raw: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         seen[key] = len(out)
         out.append({
+            "id": h.get("id") or h.get("rootMemoryId") or "",
             "content": content,
             "memory": memory,
             "source": source,
@@ -78,6 +79,23 @@ def _normalize_results(raw: dict[str, Any]) -> list[dict[str, Any]]:
             "url": source if str(source).startswith("http") else "",
         })
     return out
+
+
+def _entry_to_memory(entry: dict[str, Any]) -> dict[str, Any]:
+    """Normalize a /v4/memories/list entry into the UI's memory shape."""
+    meta = entry.get("metadata") or {}
+    source = meta.get("source") or ""
+    content = meta.get("title") or _clean(entry.get("memory") or "")
+    return {
+        "id": entry.get("id") or "",
+        "content": content,
+        "memory": entry.get("memory") or "",
+        "source": source,
+        "kind": meta.get("kind") or "",
+        "captured_at": meta.get("captured_at") or entry.get("createdAt") or "",
+        "created_at": entry.get("createdAt") or "",
+        "url": source if str(source).startswith("http") else "",
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -93,6 +111,14 @@ def health() -> dict[str, Any]:
 @app.get("/api/stats")
 def stats() -> dict[str, Any]:
     return client.stats()
+
+
+@app.get("/api/recent")
+def recent(limit: int = 10) -> JSONResponse:
+    """Newest memories by insertion time — powers the live capture feed."""
+    limit = max(1, min(limit, 50))
+    entries = client.list_memories(limit=limit, order="desc", sort="createdAt")
+    return JSONResponse({"memories": [_entry_to_memory(e) for e in entries]})
 
 
 @app.post("/api/forget_all")

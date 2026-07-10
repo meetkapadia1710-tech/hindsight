@@ -71,7 +71,8 @@ INDEX_HTML = r"""<!doctype html>
   .state-layer:active::after     { opacity: .12; }
 
   @media (prefers-reduced-motion: reduce) {
-    .ripple, .spin, .spin circle { animation: none !important; }
+    .ripple, .spin, .spin circle, .live-item.fresh, .live-head .rec { animation: none !important; }
+    .live-drawer { transition: none !important; }
   }
 
   /* -- app bar: flush at rest, elevates once content scrolls under it ----- */
@@ -209,6 +210,38 @@ INDEX_HTML = r"""<!doctype html>
     100% { stroke-dasharray: 44, 200; stroke-dashoffset: -59; }
   }
 
+  /* -- live capture drawer -------------------------------------------------- */
+  .live-drawer { position: fixed; top: 64px; right: 0; bottom: 80px; width: 340px; max-width: 92vw;
+    background: var(--surface-02); box-shadow: var(--elevation-8); z-index: 9;
+    display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 200ms ease-out; }
+  .live-drawer.open { transform: translateX(0); }
+  .live-head { display: flex; align-items: center; gap: 10px; padding: 16px;
+    border-bottom: 1px solid var(--divider); flex: none; }
+  .live-head .rec { width: 8px; height: 8px; border-radius: 50%; background: var(--error);
+    flex: none; animation: rec-pulse 1.6s ease-in-out infinite; }
+  .live-head .rec.paused { background: var(--text-disabled); animation: none; }
+  @keyframes rec-pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+  .live-title { font: 500 14px/1 var(--font); letter-spacing: .02857em;
+    text-transform: uppercase; color: var(--text-primary); }
+  .live-sub { font: 400 11px/1.3 var(--font); color: var(--text-secondary); margin-top: 2px; }
+  .live-close { margin-left: auto; background: transparent; border: none; color: var(--text-secondary);
+    cursor: pointer; border-radius: var(--radius); padding: 6px; display: inline-flex; }
+  .live-close:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+  .live-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .live-empty { color: var(--text-secondary); font-size: 13px; text-align: center; padding: 24px 12px; }
+  .live-item { padding: 12px; border-radius: var(--radius); background: var(--surface-01);
+    margin-bottom: 8px; }
+  .live-item .lc { font: 400 13px/1.4 var(--font); color: var(--text-primary);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .live-item .lm { font: 400 11px/1 var(--font); color: var(--text-secondary); margin-top: 6px;
+    display: flex; align-items: center; gap: 6px; }
+  .live-item.fresh { animation: flash-in .6s ease-out; }
+  @keyframes flash-in {
+    from { opacity: 0; transform: translateY(-6px); box-shadow: 0 0 0 2px var(--primary); }
+    to   { opacity: 1; transform: translateY(0); box-shadow: none; }
+  }
+
   /* -- dialog (replaces native confirm() for Forget all) --------------------- */
   .m-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.5);
     display: flex; align-items: center; justify-content: center; z-index: 50;
@@ -238,7 +271,12 @@ INDEX_HTML = r"""<!doctype html>
   <div class="logo">Hind<span>sight</span></div>
   <div class="tag">your PC's memory · stays on your PC</div>
   <div class="hstats" id="hstats"></div>
-  <button class="btn-text ripple-host state-layer" id="forget" tabindex="7"
+  <button class="btn-text ripple-host state-layer" id="livetoggle" tabindex="7"
+    aria-label="Toggle live capture feed" title="Watch memories form in real time" style="color:var(--primary)">
+    <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
+    Live
+  </button>
+  <button class="btn-text ripple-host state-layer" id="forget" tabindex="8"
     aria-label="Forget all" title="Permanently delete every stored memory">
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     Forget all
@@ -262,6 +300,19 @@ INDEX_HTML = r"""<!doctype html>
   </div>
   <div class="thread" id="thread" aria-live="polite"></div>
 </main>
+<aside class="live-drawer" id="livedrawer" aria-label="Live capture feed" aria-hidden="true">
+  <div class="live-head">
+    <span class="rec" id="liverec"></span>
+    <div>
+      <div class="live-title">Live capture</div>
+      <div class="live-sub" id="livesub">watching for new memories…</div>
+    </div>
+    <button class="live-close" id="liveclose" aria-label="Close live feed">
+      <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="live-list" id="livelist" aria-live="polite"></div>
+</aside>
 <div class="composer">
   <div class="box">
     <div class="field">
@@ -320,6 +371,52 @@ async function refreshStats(){
 refreshStats(); setInterval(refreshStats, 8000);
 
 function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+const KIND_LABEL = { clipboard:'Clipboard', window:'Window', browser:'Browser', ocr:'OCR' };
+function relTime(iso){
+  const t = new Date(iso).getTime(); if (isNaN(t)) return '';
+  const s = Math.max(0, (Date.now()-t)/1000);
+  if (s < 60)    return Math.floor(s) + 's ago';
+  if (s < 3600)  return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+// -- live capture feed: poll newest memories while the drawer is open -----
+const liveDrawer = $('#livedrawer'), liveList = $('#livelist');
+let liveOpen = false, liveTimer = null, seenIds = new Set(), livePrimed = false, lastSig = '';
+async function pollRecent(){
+  try {
+    const r = await fetch('/api/recent?limit=12'); const j = await r.json();
+    const ms = j.memories || [];
+    const sig = ms.map(m => m.id).join(',');
+    if (sig !== lastSig) {
+      liveList.innerHTML = ms.length ? ms.map(m => {
+        const isNew = livePrimed && !seenIds.has(m.id);
+        const k = m.kind || 'window';
+        return `<div class="live-item${isNew ? ' fresh' : ''}">
+          <div class="lc">${esc(m.content)}</div>
+          <div class="lm"><span class="kdot k-${k}"></span><span class="kind-label">${KIND_LABEL[k]||k}</span> · ${esc(relTime(m.captured_at))}</div>
+        </div>`;
+      }).join('') : '<div class="live-empty">No memories yet — start the capture daemon, or copy some text and watch it appear.</div>';
+      lastSig = sig;
+    }
+    ms.forEach(m => seenIds.add(m.id));
+    livePrimed = true;
+    $('#livesub').textContent = ms.length ? (ms.length + ' most recent') : 'watching for new memories…';
+  } catch {}
+}
+function openLive(){
+  liveOpen = true; liveDrawer.classList.add('open'); liveDrawer.setAttribute('aria-hidden','false');
+  seenIds = new Set(); livePrimed = false; lastSig = '';
+  pollRecent(); liveTimer = setInterval(pollRecent, 4000);
+}
+function closeLive(){
+  liveOpen = false; liveDrawer.classList.remove('open'); liveDrawer.setAttribute('aria-hidden','true');
+  clearInterval(liveTimer); liveTimer = null;
+}
+$('#livetoggle').addEventListener('click', () => liveOpen ? closeLive() : openLive());
+$('#liveclose').addEventListener('click', closeLive);
 
 // Material Dialog — replaces native confirm() for "Forget all". The gate
 // (destructive call only fires if the user picks the confirm action) is
@@ -381,8 +478,6 @@ $('#forget').addEventListener('click', async () => {
   thread.innerHTML=''; $('#hero').style.display='';
   refreshStats();
 });
-
-const KIND_LABEL = { clipboard:'Clipboard', window:'Window', browser:'Browser', ocr:'OCR' };
 
 function addUser(text){
   const el = document.createElement('div'); el.className = 'msg user';

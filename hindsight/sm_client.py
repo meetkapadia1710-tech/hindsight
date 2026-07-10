@@ -68,6 +68,29 @@ class SupermemoryClient:
         r.raise_for_status()
         return r.json()
 
+    def list_memories(
+        self, limit: int = 50, order: str = "desc", sort: str = "createdAt",
+    ) -> list[dict[str, Any]]:
+        """Return raw memory entries for our container (newest-first by default).
+
+        Used by the live feed (newest by insertion time), the daily digest, and
+        the activity view. Sorting by `createdAt` means a freshly captured
+        memory rises to the top the instant it is stored.
+        """
+        try:
+            r = self._http.post(
+                "/v4/memories/list",
+                json={
+                    "containerTags": [self.container_tag],
+                    "limit": limit, "order": order, "sort": sort,
+                },
+            )
+            r.raise_for_status()
+            body = r.json()
+            return body.get("memoryEntries", []) if isinstance(body, dict) else []
+        except httpx.HTTPError:
+            return []
+
     def stats(self) -> dict:
         """Return {memoryCount} for our container.
 
@@ -86,6 +109,15 @@ class SupermemoryClient:
         except httpx.HTTPError:
             pass
         return {"memoryCount": total}
+
+    def forget_one(self, memory_id: str) -> dict:
+        """Delete a single memory by id."""
+        r = self._http.request(
+            "DELETE", "/v4/memories",
+            json={"id": memory_id, "containerTag": self.container_tag},
+        )
+        r.raise_for_status()
+        return r.json()
 
     def forget_all(self) -> dict:
         """Delete every memory in our container (the panic button)."""
