@@ -5,7 +5,7 @@ INDEX_HTML = r"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Hindsight</title>
 <style>
   :root {
@@ -52,7 +52,8 @@ INDEX_HTML = r"""<!doctype html>
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text-primary);
-    font: 400 14px/1.5 var(--font); min-height: 100vh;
+    font: 400 14px/1.5 var(--font); min-height: 100vh; min-height: 100dvh;
+    overflow-x: clip;   /* long URLs / off-canvas panels never scroll the page sideways */
     -webkit-font-smoothing: antialiased;
   }
 
@@ -86,8 +87,7 @@ INDEX_HTML = r"""<!doctype html>
   .logo span { color: var(--primary); }
   .tag { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
   .hstats { margin-left: auto; color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
-  @media (max-width: 760px) { .tag { display: none; } }
-  @media (max-width: 560px) { .hstats { display: none; } }
+  @media (max-width: 600px) { .tag { display: none; } }
 
   /* -- text button (forget all) ------------------------------------------- */
   .btn-text {
@@ -100,6 +100,24 @@ INDEX_HTML = r"""<!doctype html>
   .btn-text:hover { background: rgba(244,67,54,.08); color: var(--error); }
   .btn-text:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .ic { flex: none; }
+  /* icon button (app-bar overflow) */
+  .btn-icon { background: transparent; border: none; color: var(--text-secondary); cursor: pointer;
+    width: 44px; height: 44px; border-radius: 50%; display: none; flex: none;
+    align-items: center; justify-content: center; transition: background-color .15s; }
+  .btn-icon:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+  .btn-icon:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .appbar-more { margin-left: 0; }
+  /* overflow menu */
+  .menu { position: fixed; top: 56px; right: 8px; min-width: 200px; z-index: 40;
+    background: var(--surface-08); box-shadow: var(--elevation-8); border-radius: var(--radius);
+    padding: 8px 0; display: none; }
+  .menu.open { display: block; }
+  .menu-item { width: 100%; background: transparent; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 16px; padding: 0 16px; height: 48px;
+    color: var(--text-primary); font: 400 15px/1 var(--font); text-align: left; }
+  .menu-item .ic { color: var(--text-secondary); }
+  .menu-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+  .menu-item-error, .menu-item-error .ic { color: var(--error); }
 
   /* -- status chip --------------------------------------------------------- */
   .chip-status {
@@ -114,7 +132,8 @@ INDEX_HTML = r"""<!doctype html>
 
   /* -- hero (h5 / subtitle1) ------------------------------------------------ */
   .hero { text-align: center; padding: 48px 0 8px; }
-  .hero h1 { font: 500 24px/1.3 var(--font); color: var(--text-primary); margin: 0 0 8px; }
+  .hero h1 { font-weight: 500; font-size: clamp(1.35rem, 4vw + .5rem, 1.5rem); line-height: 1.3;
+    color: var(--text-primary); margin: 0 0 8px; }
   .hero p { font: 400 16px/1.5 var(--font); color: var(--text-secondary); margin: 0; }
 
   /* -- suggestion chips ----------------------------------------------------- */
@@ -145,8 +164,8 @@ INDEX_HTML = r"""<!doctype html>
   .msg.user .who { background: var(--secondary); color: var(--primary-on); }
   .msg.ai .who { background: var(--primary); color: var(--primary-on); }
   .bubble { background: var(--surface-01); box-shadow: var(--elevation-1);
-    border-radius: var(--radius); padding: 16px; flex: 1; white-space: pre-wrap;
-    font: 400 16px/1.5 var(--font); color: var(--text-primary); }
+    border-radius: var(--radius); padding: 16px; flex: 1; min-width: 0; white-space: pre-wrap;
+    overflow-wrap: anywhere; font: 400 16px/1.5 var(--font); color: var(--text-primary); }
   .msg.user .bubble { background: var(--surface-03); box-shadow: none; }
   .engine { font: 400 12px/1.4 var(--font); color: var(--text-secondary); margin-top: 12px; }
 
@@ -160,9 +179,10 @@ INDEX_HTML = r"""<!doctype html>
   .ev:hover { background: rgba(255,255,255,.04); }
   .ev:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
   .ev .body { flex: 1; min-width: 0; }
-  .ev .content { font: 400 14px/1.5 var(--font); color: var(--text-primary); }
+  .ev .content { font: 400 14px/1.5 var(--font); color: var(--text-primary); overflow-wrap: anywhere; }
   .ev .meta { font: 400 12px/1.4 var(--font); color: var(--text-secondary); margin-top: 4px;
-    word-break: break-word; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    overflow-wrap: anywhere; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ev .meta a { overflow-wrap: anywhere; }
   .kdot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
   .kdot.k-browser { background: var(--k-browser); }
   .kdot.k-window { background: var(--k-window); }
@@ -178,7 +198,8 @@ INDEX_HTML = r"""<!doctype html>
 
   /* -- composer: outlined text field w/ floating label + contained button -- */
   .composer { position: fixed; left: 0; right: 0; bottom: 0;
-    background: var(--surface-04); box-shadow: var(--elevation-4-up); padding: 16px 24px; z-index: 8; }
+    background: var(--surface-04); box-shadow: var(--elevation-4-up); z-index: 8;
+    padding: 16px 24px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
   .composer .box { max-width: 760px; margin: 0 auto; display: flex; gap: 16px; align-items: center; }
   .field { position: relative; flex: 1; display: flex; align-items: center; background: var(--surface-02);
     border: 1px solid var(--divider); border-radius: var(--radius);
@@ -238,6 +259,8 @@ INDEX_HTML = r"""<!doctype html>
     display: flex; flex-direction: column;
     transform: translateX(100%); transition: transform 200ms ease-out; }
   .live-drawer.open { transform: translateX(0); }
+  .sheet-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8; display: none; }
+  .sheet-handle { display: none; }
   .live-head { display: flex; align-items: center; gap: 10px; padding: 16px;
     border-bottom: 1px solid var(--divider); flex: none; }
   .live-head .rec { width: 8px; height: 8px; border-radius: 50%; background: var(--error);
@@ -331,28 +354,130 @@ INDEX_HTML = r"""<!doctype html>
 
   a { color: var(--primary); text-decoration: none; }
   a:hover { text-decoration: underline; }
+
+  /* ===================== responsive: phone (max-width 599px) ============ */
+  @media (max-width: 599px) {
+    main { padding: 16px 16px 150px; }
+    .hword-full { display: none; }
+
+    /* app bar: collapse the text actions into an overflow menu */
+    header { gap: 8px; padding: 0 8px 0 16px; }
+    .appbar-action { display: none; }
+    .btn-icon { display: inline-flex; }
+    .chip-status { background: transparent; padding: 0 4px; gap: 4px; }
+    #badgetext { display: none; }
+
+    /* hero */
+    .hero { padding: 24px 0 8px; }
+    .hero p { font-size: 15px; }
+
+    /* suggestion + scope chips become horizontal snap-scroll rows */
+    .chips, .scopes {
+      flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+      scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-bottom: 4px;
+      -webkit-mask-image: linear-gradient(to right, #000 92%, transparent);
+              mask-image: linear-gradient(to right, #000 92%, transparent);
+    }
+    .chips { margin-top: 20px; }
+    .chips::-webkit-scrollbar, .scopes::-webkit-scrollbar { display: none; }
+    .chips, .scopes { scrollbar-width: none; }
+    .chip, .scope-chip { flex: none; scroll-snap-align: start; }
+
+    /* thread */
+    .msg { gap: 8px; }
+    .msg .who { width: 28px; height: 28px; font-size: 12px; }
+    .bubble { padding: 12px 14px; font-size: 15px; }
+
+    /* evidence rows stack vertically: meta, then content, then a full-width bar */
+    .ev { flex-direction: column; align-items: stretch; gap: 6px; padding: 12px 8px; position: relative; }
+    .ev .body { display: flex; flex-direction: column; min-width: 0; }
+    .ev .content { order: 2; }
+    .ev .meta { order: 1; margin-top: 0; margin-bottom: 2px; padding-right: 44px; }
+    .ev .relev { align-self: stretch; width: 100%; justify-content: flex-start; }
+    .ev .relev .bar { flex: 1; width: auto; }
+    .ev-del { position: absolute; top: 6px; right: 2px; align-self: auto; }
+
+    /* composer: icon-only send */
+    .composer .box { gap: 8px; }
+    .send-label { display: none; }
+    .send { width: 48px; padding: 0; justify-content: center; }
+
+    /* dialogs */
+    .m-dialog { width: min(calc(100vw - 32px), 560px); }
+    .m-dialog-actions { flex-wrap: wrap; }
+
+    /* live feed -> bottom sheet (scrim + drag handle) */
+    .sheet-scrim.show { display: block; }
+    .live-drawer { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-width: 100%;
+      height: 80vh; height: 80dvh; border-radius: 16px 16px 0 0;
+      transform: translateY(100%); transition: transform 220ms ease-out; }
+    .live-drawer.open { transform: translateY(0); }
+    .sheet-handle { display: block; width: 32px; height: 4px; border-radius: 2px;
+      background: var(--text-disabled); margin: 8px auto 0; flex: none; cursor: pointer; }
+
+    /* privacy panel -> full-screen dialog (covers the app bar, shows its own header) */
+    .priv-drawer { top: 0; bottom: 0; height: 100vh; height: 100dvh; border-radius: 0; z-index: 20; }
+    .priv-drawer .sheet-handle { display: none; }
+    .priv-drawer .live-head { position: sticky; top: 0; background: var(--surface-02); z-index: 1; }
+  }
+  @media (max-width: 599px) and (prefers-reduced-motion: reduce) {
+    .live-drawer { transition: none !important; }
+  }
+
+  /* ===================== touch / pointer ==================== */
+  @media (hover: hover) { .ev:hover .ev-del { color: var(--text-secondary); } }
+  @media (hover: none)  { .ev-del { color: var(--text-secondary); } }  /* never hover-only */
+  @media (pointer: coarse) {
+    .btn-text, .digest-chip, .send, .menu-item, .m-text-btn, .priv-excl-add button { min-height: 44px; }
+    .live-close, .btn-icon { min-width: 44px; min-height: 44px; }
+    .ev-del, .excl-chip button { min-width: 44px; min-height: 44px; justify-content: center; }
+    /* keep chip visuals small; expand only the tap area via a centered pseudo-element */
+    .chip, .scope-chip, .excl-chip { position: relative; }
+    .chip::before, .scope-chip::before, .excl-chip::before {
+      content: ''; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); height: 44px; }
+    /* switch: grow the invisible input hit area without moving the visible track */
+    .switch input { top: -12px; left: -6px; width: 48px; height: 44px; }
+  }
 </style>
 </head>
 <body>
 <header>
   <div class="logo">Hind<span>sight</span></div>
   <div class="tag">your PC's memory · stays on your PC</div>
-  <div class="hstats" id="hstats"></div>
-  <button class="btn-text ripple-host state-layer" id="livetoggle" tabindex="7"
+  <div class="hstats" id="hstats"><span id="hcount">0</span><span class="hword">&nbsp;memories</span><span class="hword-full">&nbsp;remembered</span></div>
+  <button class="btn-text ripple-host state-layer appbar-action" id="livetoggle" tabindex="7"
     aria-label="Toggle live capture feed" title="Watch memories form in real time" style="color:var(--primary)">
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
     Live
   </button>
-  <button class="btn-text ripple-host state-layer" id="privacybtn" tabindex="8"
+  <button class="btn-text ripple-host state-layer appbar-action" id="privacybtn" tabindex="8"
     aria-label="Privacy controls" title="Pause capture, choose sources, exclude sites" style="color:var(--text-secondary)">
     <svg class="ic" id="privacyicon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     <span id="privacylabel">Privacy</span>
   </button>
-  <button class="btn-text ripple-host state-layer" id="forget" tabindex="9"
+  <button class="btn-text ripple-host state-layer appbar-action" id="forget" tabindex="9"
     aria-label="Forget all" title="Permanently delete every stored memory">
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     Forget all
   </button>
+  <button class="btn-icon ripple-host state-layer appbar-more" id="overflowbtn"
+    aria-label="More actions" aria-haspopup="menu" aria-expanded="false" title="More">
+    <svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+  </button>
+  <div class="menu" id="overflowmenu" role="menu" aria-hidden="true">
+    <button class="menu-item ripple-host state-layer" role="menuitem" data-act="live">
+      <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/></svg>
+      Live capture
+    </button>
+    <button class="menu-item ripple-host state-layer" role="menuitem" data-act="privacy">
+      <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span id="menuprivacylabel">Privacy</span>
+    </button>
+    <button class="menu-item menu-item-error ripple-host state-layer" role="menuitem" data-act="forget">
+      <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+      Forget all
+    </button>
+  </div>
   <div class="chip-status" id="badge">
     <span class="status-dot" id="dot"></span>
     <svg class="ic" id="badgeicon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5.07a15 15 0 0 1 11.34 3.75"/><path d="M16.85 11.4a10 10 0 0 1 2.5 1.65"/><path d="M5 12.55a10 10 0 0 1 2.5-1.65"/><path d="M8.5 16.15a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -378,7 +503,9 @@ INDEX_HTML = r"""<!doctype html>
   </div>
   <div class="thread" id="thread" aria-live="polite"></div>
 </main>
+<div class="sheet-scrim" id="sheetscrim"></div>
 <aside class="live-drawer" id="livedrawer" aria-label="Live capture feed" aria-hidden="true">
+  <div class="sheet-handle" aria-hidden="true"></div>
   <div class="live-head">
     <span class="rec" id="liverec"></span>
     <div>
@@ -391,7 +518,8 @@ INDEX_HTML = r"""<!doctype html>
   </div>
   <div class="live-list" id="livelist" aria-live="polite"></div>
 </aside>
-<aside class="live-drawer" id="privacydrawer" aria-label="Privacy controls" aria-hidden="true">
+<aside class="live-drawer priv-drawer" id="privacydrawer" aria-label="Privacy controls" aria-hidden="true">
+  <div class="sheet-handle" aria-hidden="true"></div>
   <div class="live-head">
     <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--primary)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     <div class="grow">
@@ -438,7 +566,7 @@ INDEX_HTML = r"""<!doctype html>
     </div>
     <button class="send ripple-host state-layer" id="send" tabindex="6" aria-label="Recall">
       <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      Recall
+      <span class="send-label">Recall</span>
     </button>
   </div>
 </div>
@@ -482,10 +610,26 @@ health(); setInterval(health, 8000);
 
 async function refreshStats(){
   try { const r = await fetch('/api/stats'); const j = await r.json();
-    $('#hstats').textContent = (j.memoryCount || 0) + ' memories remembered';
+    $('#hcount').textContent = (j.memoryCount || 0);
   } catch {}
 }
 refreshStats(); setInterval(refreshStats, 8000);
+
+// -- app-bar overflow menu (phone) ----------------------------------------
+const overflowBtn = $('#overflowbtn'), overflowMenu = $('#overflowmenu');
+function closeMenu(){ overflowMenu.classList.remove('open'); overflowMenu.setAttribute('aria-hidden','true'); overflowBtn.setAttribute('aria-expanded','false'); }
+function openMenu(){ overflowMenu.classList.add('open'); overflowMenu.setAttribute('aria-hidden','false'); overflowBtn.setAttribute('aria-expanded','true'); }
+overflowBtn.addEventListener('click', (e) => { e.stopPropagation(); overflowMenu.classList.contains('open') ? closeMenu() : openMenu(); });
+document.addEventListener('click', (e) => { if (!overflowMenu.contains(e.target) && e.target !== overflowBtn) closeMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+overflowMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-act]'); if (!item) return;
+  closeMenu();
+  const act = item.dataset.act;
+  if (act === 'live') openLive();
+  else if (act === 'privacy') openPrivacy();
+  else if (act === 'forget') forgetAll();
+});
 
 function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
@@ -523,18 +667,23 @@ async function pollRecent(){
     $('#livesub').textContent = ms.length ? (ms.length + ' most recent') : 'watching for new memories…';
   } catch {}
 }
+const sheetScrim = $('#sheetscrim');
 function openLive(){
   closePrivacy();
   liveOpen = true; liveDrawer.classList.add('open'); liveDrawer.setAttribute('aria-hidden','false');
+  sheetScrim.classList.add('show');   // dims content behind the bottom sheet (phone only, via CSS)
   seenIds = new Set(); livePrimed = false; lastSig = '';
   pollRecent(); liveTimer = setInterval(pollRecent, 4000);
 }
 function closeLive(){
   liveOpen = false; liveDrawer.classList.remove('open'); liveDrawer.setAttribute('aria-hidden','true');
+  sheetScrim.classList.remove('show');
   clearInterval(liveTimer); liveTimer = null;
 }
 $('#livetoggle').addEventListener('click', () => liveOpen ? closeLive() : openLive());
 $('#liveclose').addEventListener('click', closeLive);
+sheetScrim.addEventListener('click', closeLive);           // tap scrim to dismiss the sheet
+liveDrawer.querySelector('.sheet-handle').addEventListener('click', closeLive);  // tap handle to dismiss
 
 // -- privacy control center ------------------------------------------------
 const privDrawer = $('#privacydrawer');
@@ -543,6 +692,7 @@ const X_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" strok
 function applyPrivacyBtn(){
   $('#privacylabel').textContent = settings.paused ? 'Paused' : 'Privacy';
   $('#privacybtn').style.color = settings.paused ? 'var(--error)' : 'var(--text-secondary)';
+  const ml = $('#menuprivacylabel'); if (ml) ml.textContent = settings.paused ? 'Privacy · Paused' : 'Privacy';
 }
 function renderPrivacy(){
   $('#recsw').checked = !settings.paused;
@@ -637,7 +787,7 @@ function materialConfirm(title, message, confirmLabel, cancelLabel){
   });
 }
 
-$('#forget').addEventListener('click', async () => {
+async function forgetAll(){
   const ok = await materialConfirm(
     'Forget everything?',
     'This permanently deletes every stored memory. This cannot be undone.',
@@ -647,7 +797,8 @@ $('#forget').addEventListener('click', async () => {
   await fetch('/api/forget_all', {method:'POST'});
   thread.innerHTML=''; $('#hero').style.display='';
   refreshStats();
-});
+}
+$('#forget').addEventListener('click', forgetAll);
 
 function addUser(text){
   const el = document.createElement('div'); el.className = 'msg user';
