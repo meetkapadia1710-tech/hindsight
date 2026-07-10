@@ -36,6 +36,9 @@ max_clipboard_chars = 2000
 # Local answer engine. Tries Ollama first, falls back to extractive summary.
 ollama_url = "http://localhost:11434"
 ollama_model = "qwen2.5:3b-instruct"
+# Max seconds to wait for the local LLM before falling back to an instant
+# extractive answer. Keeps the UI responsive when the GPU is busy.
+timeout_seconds = 12
 
 [memory]
 # entityContext sent with every document to anchor Supermemory's memory agent

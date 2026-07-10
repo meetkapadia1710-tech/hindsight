@@ -60,8 +60,17 @@ def _try_ollama(question: str, context: str) -> str | None:
     try:
         r = httpx.post(
             f"{_ans['ollama_url']}/api/generate",
-            json={"model": _ans["ollama_model"], "prompt": prompt, "stream": False},
-            timeout=60.0,
+            json={
+                "model": _ans["ollama_model"],
+                "prompt": prompt,
+                "stream": False,
+                "keep_alive": "30m",          # keep the model resident
+                "options": {"num_predict": 180, "temperature": 0.2},
+            },
+            # Cap the wait so the UI stays snappy: if the GPU is busy and the
+            # model is on CPU, we fall back to the instant extractive answer
+            # rather than making the user wait tens of seconds.
+            timeout=float(_ans.get("timeout_seconds", 12)),
         )
         r.raise_for_status()
         return r.json().get("response", "").strip() or None
@@ -79,10 +88,7 @@ def _extractive(question: str, memories: list[dict[str, Any]]) -> str:
         src_str = f" — {src}" if src else ""
         bullets.append(f"• {ts}: {content}{src_str}")
     joined = "\n".join(bullets)
-    return (
-        "Here's what I found in your history that seems most relevant "
-        f"(no local LLM running, so this is a direct recall):\n\n{joined}"
-    )
+    return "Here's what I found in your history that matches:\n\n" + joined
 
 
 def _friendly_time(iso: str) -> str:
