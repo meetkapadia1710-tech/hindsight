@@ -70,6 +70,19 @@ py -m hindsight.capture      # start remembering (Ctrl+C to stop, Ctrl+Break to 
 py -m hindsight.app          # ask questions → http://localhost:8787
 ```
 
+## Seeding demo data (optional)
+
+Want data to query without waiting for capture? Two scripts insert memories
+directly (embedded on-device, instantly searchable):
+
+```powershell
+py scripts\seed_demo.py        # ~30 curated memories: a believable day
+py scripts\seed_bulk.py 540    # 500+ varied memories across the last ~30 days
+```
+
+Both wipe the `hindsight` container first. `seed_bulk.py` keeps the curated
+"anchor" memories so example queries still resolve.
+
 ## Privacy controls
 
 - `config.toml` → `[privacy]` — exclude apps/titles, drop secret-shaped clipboard text.
