@@ -62,12 +62,25 @@ INDEX_HTML = r"""<!doctype html>
     transform: scale(0); animation: ripple-anim .5s ease-out; pointer-events: none; }
   @keyframes ripple-anim { to { transform: scale(1); opacity: 0; } }
 
-  /* -- app bar ------------------------------------------------------------ */
+  /* -- state layers: hover/focus/pressed tint every interactive surface -- */
+  .state-layer { position: relative; }
+  .state-layer::after { content: ''; position: absolute; inset: 0; border-radius: inherit;
+    background: currentColor; opacity: 0; transition: opacity 100ms; pointer-events: none; }
+  .state-layer:hover::after      { opacity: .08; }
+  .state-layer:focus-visible::after,
+  .state-layer:active::after     { opacity: .12; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ripple, .spin, .spin circle { animation: none !important; }
+  }
+
+  /* -- app bar: flush at rest, elevates once content scrolls under it ----- */
   header {
     display: flex; align-items: center; gap: 16px; height: 64px; padding: 0 24px;
-    background: var(--surface-04); box-shadow: var(--elevation-4); overflow: hidden;
-    position: sticky; top: 0; z-index: 10;
+    background: var(--surface-04); box-shadow: none; overflow: hidden;
+    position: sticky; top: 0; z-index: 10; transition: box-shadow 150ms;
   }
+  header.raised { box-shadow: var(--elevation-4); }
   .logo { font-size: 20px; font-weight: 500; color: var(--text-primary); flex: none; white-space: nowrap; }
   .logo span { color: var(--primary); }
   .tag { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
@@ -136,6 +149,7 @@ INDEX_HTML = r"""<!doctype html>
     border-bottom: 1px solid var(--divider); cursor: default; transition: background-color .15s; }
   .ev:last-child { border-bottom: 0; }
   .ev:hover { background: rgba(255,255,255,.04); }
+  .ev:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
   .ev .body { flex: 1; min-width: 0; }
   .ev .content { font: 400 14px/1.5 var(--font); color: var(--text-primary); }
   .ev .meta { font: 400 12px/1.4 var(--font); color: var(--text-secondary); margin-top: 4px;
@@ -153,17 +167,27 @@ INDEX_HTML = r"""<!doctype html>
     overflow: hidden; }
   .ev .relev .bar > span { display: block; height: 100%; background: var(--primary); }
 
-  /* -- composer: outlined text field + contained button --------------------- */
+  /* -- composer: outlined text field w/ floating label + contained button -- */
   .composer { position: fixed; left: 0; right: 0; bottom: 0;
     background: var(--surface-04); box-shadow: var(--elevation-4-up); padding: 16px 24px; z-index: 8; }
   .composer .box { max-width: 760px; margin: 0 auto; display: flex; gap: 16px; align-items: center; }
-  .field { flex: 1; display: flex; align-items: center; background: var(--surface-02);
+  .field { position: relative; flex: 1; display: flex; align-items: center; background: var(--surface-02);
     border: 1px solid var(--divider); border-radius: var(--radius);
     transition: border-color .15s, box-shadow .15s; }
   .field:focus-within { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
   input[type=text] { flex: 1; background: transparent; border: none; outline: none;
     padding: 16px; color: var(--text-primary); font: 400 16px/1.4 var(--font); }
-  input[type=text]::placeholder { color: var(--text-disabled); }
+  input[type=text]::placeholder { color: transparent; }
+  .field label {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    font: 400 16px/1.4 var(--font); color: var(--text-disabled);
+    background: var(--surface-02); padding: 0 4px; margin-left: -4px;
+    pointer-events: none; transition: top 150ms, font-size 150ms, color 150ms;
+  }
+  input[type=text]:focus ~ label,
+  input[type=text]:not(:placeholder-shown) ~ label {
+    top: 0; font-size: 12px; color: var(--primary);
+  }
   .send { height: 48px; padding: 0 24px; border: none; border-radius: var(--radius);
     background: var(--primary); color: var(--primary-on);
     font: 500 14px/1 var(--font); letter-spacing: .02857em; text-transform: uppercase;
@@ -214,39 +238,45 @@ INDEX_HTML = r"""<!doctype html>
   <div class="logo">Hind<span>sight</span></div>
   <div class="tag">your PC's memory · stays on your PC</div>
   <div class="hstats" id="hstats"></div>
-  <button class="btn-text ripple-host" id="forget" title="Permanently delete every stored memory">
-    <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+  <button class="btn-text ripple-host state-layer" id="forget" tabindex="7"
+    aria-label="Forget all" title="Permanently delete every stored memory">
+    <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     Forget all
   </button>
-  <div class="chip-status" id="badge"><span class="status-dot" id="dot"></span><span id="badgetext">checking…</span></div>
+  <div class="chip-status" id="badge">
+    <span class="status-dot" id="dot"></span>
+    <svg class="ic" id="badgeicon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5.07a15 15 0 0 1 11.34 3.75"/><path d="M16.85 11.4a10 10 0 0 1 2.5 1.65"/><path d="M5 12.55a10 10 0 0 1 2.5-1.65"/><path d="M8.5 16.15a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12.01" y2="20"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    <span id="badgetext">checking…</span>
+  </div>
 </header>
 <main>
   <div class="hero" id="hero">
     <h1>Ask your past.</h1>
     <p>Everything you've seen, copied, and read — searchable, and 100% local.</p>
     <div class="chips" id="chips">
-      <div class="chip ripple-host">What was I working on this morning?</div>
-      <div class="chip ripple-host">What articles did I read about embeddings?</div>
-      <div class="chip ripple-host">What did I copy to my clipboard earlier?</div>
-      <div class="chip ripple-host">Which GitHub repos did I look at today?</div>
+      <div class="chip ripple-host state-layer" tabindex="1">What was I working on this morning?</div>
+      <div class="chip ripple-host state-layer" tabindex="2">What articles did I read about embeddings?</div>
+      <div class="chip ripple-host state-layer" tabindex="3">What did I copy to my clipboard earlier?</div>
+      <div class="chip ripple-host state-layer" tabindex="4">Which GitHub repos did I look at today?</div>
     </div>
   </div>
-  <div class="thread" id="thread"></div>
+  <div class="thread" id="thread" aria-live="polite"></div>
 </main>
 <div class="composer">
   <div class="box">
     <div class="field">
-      <input id="q" type="text" placeholder="Ask about anything you've done on this machine…" autocomplete="off" />
+      <input id="q" type="text" placeholder=" " autocomplete="off" tabindex="5" />
+      <label for="q">Ask about anything you've done on this machine…</label>
     </div>
-    <button class="send ripple-host" id="send">
-      <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    <button class="send ripple-host state-layer" id="send" tabindex="6" aria-label="Recall">
+      <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       Recall
     </button>
   </div>
 </div>
 <script>
 const $ = s => document.querySelector(s);
-const thread = $('#thread'), input = $('#q'), send = $('#send');
+const thread = $('#thread'), input = $('#q'), send = $('#send'), header = $('header');
 
 function ripple(el, evt){
   const r = document.createElement('span');
@@ -261,16 +291,24 @@ function ripple(el, evt){
 }
 function wireRipples(root){
   root.querySelectorAll('.ripple-host').forEach(el => {
-    el.addEventListener('click', e => ripple(el, e));
+    el.addEventListener('pointerdown', e => ripple(el, e));
   });
 }
+wireRipples(document);
+
+// App bar: flush at rest, elevates once content has scrolled under it.
+addEventListener('scroll', () => { header.classList.toggle('raised', scrollY > 4); });
 
 async function health() {
   try {
     const r = await fetch('/api/health'); const j = await r.json();
     $('#dot').classList.toggle('off', !j.ok);
+    $('#badgeicon').style.display = j.ok ? 'none' : 'inline-block';
     $('#badgetext').textContent = j.ok ? 'Local · Offline-capable' : 'Supermemory Local not reachable';
-  } catch { $('#dot').classList.add('off'); $('#badgetext').textContent = 'offline'; }
+  } catch {
+    $('#dot').classList.add('off'); $('#badgeicon').style.display = 'inline-block';
+    $('#badgetext').textContent = 'offline';
+  }
 }
 health(); setInterval(health, 8000);
 
@@ -285,22 +323,44 @@ function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;',
 
 // Material Dialog — replaces native confirm() for "Forget all". The gate
 // (destructive call only fires if the user picks the confirm action) is
-// identical to a plain confirm(); only the chrome is a real Material dialog.
+// identical to a plain confirm(); the chrome is a real, focus-trapped
+// Material dialog that defaults focus to the safe (Cancel) action.
 function materialConfirm(title, message, confirmLabel, cancelLabel){
   return new Promise(resolve => {
     const scrim = document.createElement('div'); scrim.className = 'm-scrim';
-    scrim.innerHTML = `<div class="m-dialog" role="alertdialog" aria-modal="true">
-      <div class="m-dialog-title">${esc(title)}</div>
-      <div class="m-dialog-body">${esc(message)}</div>
+    scrim.innerHTML = `<div class="m-dialog" role="alertdialog" aria-modal="true" aria-labelledby="mdt" aria-describedby="mdb">
+      <div class="m-dialog-title" id="mdt">${esc(title)}</div>
+      <div class="m-dialog-body" id="mdb">${esc(message)}</div>
       <div class="m-dialog-actions">
         <button class="m-text-btn ripple-host" data-a="cancel">${esc(cancelLabel)}</button>
         <button class="m-text-btn m-text-btn-error ripple-host" data-a="confirm">${esc(confirmLabel)}</button>
       </div></div>`;
     document.body.appendChild(scrim);
     wireRipples(scrim);
-    function close(result){ scrim.remove(); document.removeEventListener('keydown', onKey); resolve(result); }
+
+    const cancelBtn = scrim.querySelector('[data-a="cancel"]');
+    const confirmBtn = scrim.querySelector('[data-a="confirm"]');
+    const focusables = [cancelBtn, confirmBtn];
+    cancelBtn.focus();   // safe default for a destructive action
+
+    function trapTab(e){
+      if (e.key !== 'Tab') return;
+      e.preventDefault();
+      const i = focusables.indexOf(document.activeElement);
+      const next = e.shiftKey
+        ? focusables[(i <= 0 ? focusables.length : i) - 1]
+        : focusables[(i + 1) % focusables.length];
+      next.focus();
+    }
     function onKey(e){ if (e.key === 'Escape') close(false); }
+    function close(result){
+      scrim.remove();
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', trapTab);
+      resolve(result);
+    }
     document.addEventListener('keydown', onKey);
+    document.addEventListener('keydown', trapTab);
     scrim.addEventListener('click', e => {
       if (e.target === scrim) return close(false);
       const a = e.target.closest('[data-a]');
@@ -310,8 +370,7 @@ function materialConfirm(title, message, confirmLabel, cancelLabel){
   });
 }
 
-$('#forget').addEventListener('click', async (e) => {
-  ripple($('#forget'), e);
+$('#forget').addEventListener('click', async () => {
   const ok = await materialConfirm(
     'Forget everything?',
     'This permanently deletes every stored memory. This cannot be undone.',
@@ -346,7 +405,7 @@ function renderEvidence(ev){
     const when = e.captured_at ? new Date(e.captured_at).toLocaleString() : '';
     const src = e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noreferrer">${esc(e.source)}</a>` : esc(e.source);
     const pct = Math.round((e.score||0)*100);
-    return `<div class="ev ripple-host"><div class="body">
+    return `<div class="ev ripple-host state-layer" tabindex="0"><div class="body">
       <div class="content">${esc(e.content)}</div>
       <div class="meta"><span class="kdot k-${k}"></span><span class="kind-label">${label}</span> · ${when}${src? ' · '+src : ''}</div></div>
       <div class="relev" title="relevance ${pct}%"><div class="bar"><span style="width:${pct}%"></span></div>${pct}%</div></div>`;
@@ -374,9 +433,9 @@ async function ask(text){
 }
 function scroll(){ window.scrollTo(0, document.body.scrollHeight); }
 function go(){ const t = input.value.trim(); if(!t) return; input.value=''; ask(t); }
-send.addEventListener('click', (e) => { ripple(send, e); go(); });
+send.addEventListener('click', () => go());
 input.addEventListener('keydown', e => { if(e.key==='Enter') go(); });
-document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', (e) => { ripple(c, e); ask(c.textContent); }));
+document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => ask(c.textContent)));
 </script>
 </body>
 </html>
