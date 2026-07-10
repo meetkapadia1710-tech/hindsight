@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import signal
 import sys
+import threading
 import time
 
 from ..config import CONFIG
@@ -29,6 +30,8 @@ class CaptureDaemon:
         self.do_windows = bool(cap["windows"])
         self.do_browser = bool(cap["browser_history"])
         self.browser_sync = float(cap["browser_sync_minutes"]) * 60
+        self.do_ocr = bool(cap.get("ocr", False))
+        self.ocr_min_interval = float(cap.get("ocr_min_interval_seconds", 20))
 
         self.client = SupermemoryClient()
         self.ingestor = Ingestor(self.client, float(cap["batch_flush_seconds"]))
@@ -40,13 +43,15 @@ class CaptureDaemon:
         self._window_since = 0.0
         self._window_committed = False
         self._last_browser_sync = 0.0
+        self._last_ocr = 0.0
+        self._ocr_busy = False
 
     # -- lifecycle ---------------------------------------------------------
     def run(self) -> None:
         if not self.client.ping():
             print(
                 "[hindsight] cannot reach Supermemory Local at "
-                f"{self.client.base_url}. Start it with `npx supermemory local`.",
+                f"{self.client.base_url}. Start it with scripts\\start_supermemory.ps1",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -100,6 +105,33 @@ class CaptureDaemon:
                     kind="window", content=win.title, source=win.app,
                     metadata={"app": win.app},
                 ))
+                if self.do_ocr and (now - self._last_ocr) >= self.ocr_min_interval:
+                    self._last_ocr = now
+                    self._ocr_current_window(win)
+
+    # -- ocr ---------------------------------------------------------------
+    def _ocr_current_window(self, win) -> None:
+        """OCR the screen on a background thread (it takes ~1-2s) so the poll
+        loop keeps running. Only the recognized text is stored."""
+        if self._ocr_busy:
+            return
+        self._ocr_busy = True
+
+        def worker() -> None:
+            try:
+                from .ocr import ocr_screen
+                res = ocr_screen()
+                if res and privacy.clipboard_allowed(res.text):
+                    self.ingestor.submit(Event(
+                        kind="ocr", content=res.text, source=win.app,
+                        metadata={"app": win.app, "window": win.title},
+                    ))
+            except Exception as exc:
+                print(f"[hindsight] ocr failed: {exc}")
+            finally:
+                self._ocr_busy = False
+
+        threading.Thread(target=worker, daemon=True).start()
 
     # -- clipboard ---------------------------------------------------------
     def _tick_clipboard(self) -> None:

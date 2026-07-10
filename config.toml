@@ -13,6 +13,11 @@ clipboard = true
 windows = true
 browser_history = true
 browser_sync_minutes = 5
+# Screenshot OCR (opt-in, more invasive). On each new sustained window, run the
+# on-device Windows OCR engine and store the recognized text. Requires the
+# winrt + Pillow packages. The screenshot itself is never stored.
+ocr = false
+ocr_min_interval_seconds = 20
 
 [privacy]
 # Windows whose title or process matches any entry are NEVER captured.

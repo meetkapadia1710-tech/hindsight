@@ -1,16 +1,17 @@
 """Optional screenshot OCR using the Windows built-in OCR engine.
 
-Captures the foreground window region and runs Windows.Media.Ocr (via the
-`winsdk`/`winrt` package) entirely on-device — no cloud OCR. Text is what
-gets stored; the screenshot itself is never persisted unless you ask.
+Grabs the screen and runs Windows.Media.Ocr (via the `winrt` packages)
+entirely on-device — no cloud OCR. The recognized text is what gets stored;
+the screenshot itself is never persisted.
 
-This is a stretch feature: it is only imported if enabled, so the core
-daemon has no dependency on winsdk.
+This is an opt-in feature (config `[capture] ocr = true`) and is imported
+lazily, so the core daemon has no dependency on winrt/Pillow.
 """
 
 from __future__ import annotations
 
 import asyncio
+import io
 from dataclasses import dataclass
 
 
@@ -21,31 +22,36 @@ class OcrResult:
 
 def available() -> bool:
     try:
-        import winsdk  # noqa: F401
+        import winrt.windows.media.ocr  # noqa: F401
         from PIL import ImageGrab  # noqa: F401
         return True
-    except ImportError:
+    except Exception:
         return False
 
 
-async def _ocr_bytes(png_bytes: bytes) -> str:
-    from winsdk.windows.media.ocr import OcrEngine
-    from winsdk.windows.globalization import Language
-    from winsdk.windows.graphics.imaging import BitmapDecoder
-    from winsdk.windows.storage.streams import (
+async def _ocr_software_bitmap(png_bytes: bytes) -> str:
+    from winrt.windows.storage.streams import (
         DataWriter, InMemoryRandomAccessStream,
     )
+    from winrt.windows.graphics.imaging import BitmapDecoder
+    from winrt.windows.media.ocr import OcrEngine
+    from winrt.windows.globalization import Language
 
     stream = InMemoryRandomAccessStream()
     writer = DataWriter(stream.get_output_stream_at(0))
-    writer.write_bytes(list(png_bytes))
+    writer.write_bytes(png_bytes)
     await writer.store_async()
+    await writer.flush_async()
     stream.seek(0)
 
     decoder = await BitmapDecoder.create_async(stream)
     bitmap = await decoder.get_software_bitmap_async()
 
-    engine = OcrEngine.try_create_from_language(Language("en-US"))
+    engine = None
+    try:
+        engine = OcrEngine.try_create_from_language(Language("en-US"))
+    except Exception:
+        engine = None
     if engine is None:
         engine = OcrEngine.try_create_from_user_profile_languages()
     if engine is None:
@@ -54,18 +60,21 @@ async def _ocr_bytes(png_bytes: bytes) -> str:
     return result.text or ""
 
 
-def ocr_foreground() -> OcrResult | None:
-    """Grab the whole screen and OCR it. Returns None if unavailable."""
-    if not available():
-        return None
-    import io
-    from PIL import ImageGrab
-
-    img = ImageGrab.grab()
+def ocr_image(img) -> str:
+    """OCR a PIL image, returning recognized text (may be empty)."""
     buf = io.BytesIO()
     img.save(buf, format="PNG")
-    text = asyncio.run(_ocr_bytes(buf.getvalue()))
-    text = " ".join(text.split())
-    if len(text) < 12:
+    return asyncio.run(_ocr_software_bitmap(buf.getvalue()))
+
+
+def ocr_screen(min_chars: int = 16, max_chars: int = 1500) -> OcrResult | None:
+    """Grab the screen and OCR it. Returns None if unavailable or too little
+    text was found (avoids storing noise)."""
+    if not available():
         return None
-    return OcrResult(text=text[:1500])
+    from PIL import ImageGrab
+
+    text = " ".join(ocr_image(ImageGrab.grab()).split())
+    if len(text) < min_chars:
+        return None
+    return OcrResult(text=text[:max_chars])
