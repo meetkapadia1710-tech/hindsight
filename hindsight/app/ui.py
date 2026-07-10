@@ -74,9 +74,15 @@ INDEX_HTML = r"""<!doctype html>
   .ev.kind-window .rail { background: var(--win); }
   .ev.kind-browser .rail { background: var(--browser); }
   .ev.kind-ocr .rail { background: var(--ocr); }
-  .ev .body { flex: 1; }
+  .ev .body { flex: 1; min-width: 0; }
   .ev .content { font-size: 13.5px; }
-  .ev .meta { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .ev .meta { font-size: 11.5px; color: var(--muted); margin-top: 3px; word-break: break-word; }
+  .ev .relev { flex: none; align-self: center; display: flex; align-items: center; gap: 7px;
+    font-size: 11px; color: var(--muted); }
+  .ev .relev .bar { width: 44px; height: 5px; border-radius: 3px; background: var(--panel-2);
+    overflow: hidden; }
+  .ev .relev .bar > span { display: block; height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
   .composer { position: fixed; bottom: 0; left: 0; right: 0;
     background: linear-gradient(180deg, transparent, var(--bg) 30%); padding: 20px; }
   .composer .box { max-width: 900px; margin: 0 auto; display: flex; gap: 10px; }
@@ -161,15 +167,20 @@ function addAI(){
 }
 function renderEvidence(ev){
   if(!ev || !ev.length) return '';
-  const rows = ev.slice(0,6).map(e => {
+  // Keep the clearly-relevant matches: within 0.15 of the best score, max 5.
+  const top = ev[0].score || 0;
+  const shown = ev.filter(e => (e.score||0) >= top - 0.15).slice(0,5);
+  const rows = shown.map(e => {
     const k = e.kind || 'window';
     const when = e.captured_at ? new Date(e.captured_at).toLocaleString() : '';
     const src = e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noreferrer">${esc(e.source)}</a>` : esc(e.source);
+    const pct = Math.round((e.score||0)*100);
     return `<div class="ev kind-${k}"><div class="rail"></div><div class="body">
       <div class="content">${KIND_ICON[k]||'•'} ${esc(e.content)}</div>
-      <div class="meta">${when}${src? ' · '+src : ''}</div></div></div>`;
+      <div class="meta">${when}${src? ' · '+src : ''}</div></div>
+      <div class="relev" title="relevance ${pct}%"><div class="bar"><span style="width:${pct}%"></span></div>${pct}%</div></div>`;
   }).join('');
-  return `<div class="evidence"><h4>Evidence · ${ev.length} memories</h4>${rows}</div>`;
+  return `<div class="evidence"><h4>Evidence · ${shown.length} matching ${shown.length===1?'memory':'memories'}</h4>${rows}</div>`;
 }
 
 async function ask(text){

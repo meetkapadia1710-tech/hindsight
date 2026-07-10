@@ -14,6 +14,27 @@ Built for the **Supermemory localhost:6767 hackathon** (July 9–13, 2026).
 
 ---
 
+## See it in action
+
+![Hindsight answering a question, with a local answer and an evidence timeline](docs/demo.svg)
+
+Ask in plain English; get a cited answer plus an **evidence timeline** — the real
+memories behind it, each with a timestamp, source, and relevance score:
+
+| You ask | Hindsight answers (from your own activity) |
+| --- | --- |
+| *"What was I reading about Microsoft Recall?"* | "How Microsoft Recall stores screenshots" — Ars Technica |
+| *"Was I in any meetings?"* | Zoom Meeting — Supermemory hackathon office hours |
+| *"What Supermemory docs did I look at?"* | Supermemory self-hosting overview |
+| *"What did I read about vector search & embeddings?"* | the HNSW article, the bge model card, a copied cosine-similarity formula |
+| *"What did I copy to my clipboard?"* | `npx supermemory local`, the submission form link, … |
+
+> 📹 **Demo video:** _add your recording here_ — see [`docs/DEMO.md`](docs/DEMO.md)
+> for the 3‑minute script (including the "turn the Wi‑Fi off, it still answers" moment).
+> To drop in a real screen capture, save it as `docs/demo.gif` and swap the image link above.
+
+---
+
 ## Why this exists
 
 Microsoft Recall caused a privacy firestorm because a searchable log of everything you do is *incredibly useful* and *terrifying to put in anyone else's hands*. The answer isn't "don't build it" — it's **build it so it physically can't phone home**.
