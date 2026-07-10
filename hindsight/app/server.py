@@ -222,14 +222,20 @@ def digest(req: DigestRequest) -> JSONResponse:
 
 @app.post("/api/ask")
 def ask(req: AskRequest) -> JSONResponse:
+    question = (req.question or "").strip()
+    if not question:
+        return JSONResponse({"answer": "Ask a question to search your memory.",
+                             "engine": "none", "evidence": [], "scope": "all"})
+    limit = max(1, min(req.limit or 6, 20))   # clamp so odd inputs can't over-query
     scope = (req.scope or "all").lower()
     bounds = _scope_bounds(scope)
     # Pull a wide candidate set, then (for a time scope) filter by capture time
     # before answering, so narrowing the window never yields *more* results
-    # than "all time" and the window doesn't starve.
-    search_limit = max(req.limit * 6, 40)
+    # than "all time" and the window doesn't starve. Capped at 100 — the max
+    # Supermemory /v4/search accepts.
+    search_limit = min(max(limit * 6, 40), 100)
     try:
-        raw = client.search(req.question, limit=search_limit)
+        raw = client.search(question, limit=search_limit)
     except Exception as exc:
         return JSONResponse(
             {"error": f"search failed: {exc}", "answer": "", "evidence": []},
@@ -238,8 +244,8 @@ def ask(req: AskRequest) -> JSONResponse:
     memories = _normalize_results(raw)
     if bounds:
         memories = [m for m in memories if _within(m["captured_at"], bounds)]
-    memories = memories[:req.limit]
-    result = answer_question(req.question, memories)
+    memories = memories[:limit]
+    result = answer_question(question, memories)
     return JSONResponse({
         "answer": result["answer"],
         "engine": result["engine"],
