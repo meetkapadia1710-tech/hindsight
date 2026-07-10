@@ -128,6 +128,14 @@ INDEX_HTML = r"""<!doctype html>
   }
   .chip:hover { background: var(--surface-04); border-color: var(--text-secondary); }
   .chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .digest-row { display: flex; justify-content: center; margin-top: 16px; }
+  .digest-chip { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 20px;
+    border-radius: var(--radius-chip); border: 1px solid var(--primary);
+    background: rgba(144,202,249,.12); color: var(--primary);
+    font: 500 14px/1 var(--font); letter-spacing: .02857em; cursor: pointer;
+    transition: background-color .15s; }
+  .digest-chip:hover { background: rgba(144,202,249,.22); }
+  .digest-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
   /* -- thread / avatars / cards --------------------------------------------- */
   .thread { display: flex; flex-direction: column; gap: 24px; margin-top: 8px; }
@@ -310,6 +318,12 @@ INDEX_HTML = r"""<!doctype html>
       <div class="chip ripple-host state-layer" tabindex="2">What articles did I read about embeddings?</div>
       <div class="chip ripple-host state-layer" tabindex="3">What did I copy to my clipboard earlier?</div>
       <div class="chip ripple-host state-layer" tabindex="4">Which GitHub repos did I look at today?</div>
+    </div>
+    <div class="digest-row">
+      <button class="digest-chip ripple-host state-layer" id="digestbtn">
+        <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Summarize my day
+      </button>
     </div>
   </div>
   <div class="thread" id="thread" aria-live="polite"></div>
@@ -509,7 +523,7 @@ function addAI(){
   el.innerHTML = `<div class="who">H</div><div class="bubble"><svg class="spin" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"></circle></svg></div>`;
   thread.appendChild(el); scroll(); return el;
 }
-function renderEvidence(ev){
+function renderEvidence(ev, note){
   if(!ev || !ev.length) return '';
   // Keep the clearly-relevant matches: within 0.15 of the best score, max 5.
   const top = ev[0].score || 0;
@@ -520,12 +534,18 @@ function renderEvidence(ev){
     const when = e.captured_at ? new Date(e.captured_at).toLocaleString() : '';
     const src = e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noreferrer">${esc(e.source)}</a>` : esc(e.source);
     const pct = Math.round((e.score||0)*100);
+    // Relevance bar only when there's a real relevance score (search results);
+    // chronological evidence (the digest) has no score, so we omit it.
+    const relev = (e.score||0) > 0
+      ? `<div class="relev" title="relevance ${pct}%"><div class="bar"><span style="width:${pct}%"></span></div>${pct}%</div>`
+      : '';
     return `<div class="ev ripple-host state-layer" tabindex="0"><div class="body">
       <div class="content">${esc(e.content)}</div>
       <div class="meta"><span class="kdot k-${k}"></span><span class="kind-label">${label}</span> · ${when}${src? ' · '+src : ''}</div></div>
-      <div class="relev" title="relevance ${pct}%"><div class="bar"><span style="width:${pct}%"></span></div>${pct}%</div></div>`;
+      ${relev}</div>`;
   }).join('');
-  return `<div class="evidence"><h4>Evidence · ${shown.length} matching ${shown.length===1?'memory':'memories'}</h4>${rows}</div>`;
+  const word = note === undefined ? 'matching ' : (note ? note + ' ' : '');
+  return `<div class="evidence"><h4>Evidence · ${shown.length} ${word}${shown.length===1?'memory':'memories'}</h4>${rows}</div>`;
 }
 
 async function ask(text){
@@ -548,6 +568,23 @@ async function ask(text){
   } catch(e){ bubble.textContent = 'Request failed: ' + e; }
   send.disabled = false; scroll();
 }
+async function runDigest(){
+  addUser('Summarize my day'); $('#hero').style.display='none';
+  const bubble = addAI().querySelector('.bubble');
+  send.disabled = true;
+  try {
+    const r = await fetch('/api/digest', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({})});
+    const j = await r.json();
+    const dateTag = j.date ? `<div class="scope-tag"><span class="kdot"></span>Digest · ${esc(j.date)}</div>` : '';
+    bubble.innerHTML = esc(j.answer) + dateTag
+      + `<div class="engine">answered by ${esc(j.engine)}</div>`
+      + renderEvidence(j.evidence, '');
+    wireRipples(bubble);
+  } catch(e){ bubble.textContent = 'Request failed: ' + e; }
+  send.disabled = false; scroll();
+}
+$('#digestbtn').addEventListener('click', runDigest);
+
 function scroll(){ window.scrollTo(0, document.body.scrollHeight); }
 function go(){ const t = input.value.trim(); if(!t) return; input.value=''; ask(t); }
 send.addEventListener('click', () => go());

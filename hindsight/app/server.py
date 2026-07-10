@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from ..config import CONFIG
 from ..sm_client import SupermemoryClient
-from .answer import answer_question
+from .answer import answer_question, summarize_day
 from .ui import INDEX_HTML
 
 app = FastAPI(title="Hindsight")
@@ -154,6 +154,38 @@ def forget_all() -> JSONResponse:
         return JSONResponse(client.forget_all())
     except Exception as exc:
         return JSONResponse({"error": str(exc)}, status_code=502)
+
+
+class DigestRequest(BaseModel):
+    date: str = ""   # YYYY-MM-DD, defaults to today (local)
+
+
+@app.post("/api/digest")
+def digest(req: DigestRequest) -> JSONResponse:
+    """Narrate one day's activity, grouped and summarized, with the memories
+    behind it as evidence."""
+    from datetime import datetime, timedelta
+    now = datetime.now().astimezone()
+    try:
+        base = datetime.fromisoformat(req.date).astimezone() if req.date else now
+    except ValueError:
+        base = now
+    start = base.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
+
+    entries = client.list_memories(limit=1000, order="desc", sort="createdAt")
+    day = [m for m in (_entry_to_memory(e) for e in entries)
+           if _within(m["captured_at"], (start, end))]
+    result = summarize_day(day)
+    day_sorted = sorted(day, key=lambda m: m["captured_at"], reverse=True)
+    return JSONResponse({
+        "answer": result["summary"],
+        "engine": result["engine"],
+        "evidence": day_sorted[:8],
+        "scope": "digest",
+        "date": start.strftime("%A, %B %d"),
+        "stats": result["stats"],
+    })
 
 
 @app.post("/api/ask")
