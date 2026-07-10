@@ -631,7 +631,7 @@ overflowMenu.addEventListener('click', (e) => {
   else if (act === 'forget') forgetAll();
 });
 
-function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function esc(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 const KIND_LABEL = { clipboard:'Clipboard', window:'Window', browser:'Browser', ocr:'OCR' };
 function relTime(iso){
@@ -657,7 +657,7 @@ async function pollRecent(){
         const k = m.kind || 'window';
         return `<div class="live-item${isNew ? ' fresh' : ''}">
           <div class="lc">${esc(m.content)}</div>
-          <div class="lm"><span class="kdot k-${k}"></span><span class="kind-label">${KIND_LABEL[k]||k}</span> · ${esc(relTime(m.captured_at))}</div>
+          <div class="lm"><span class="kdot k-${esc(k)}"></span><span class="kind-label">${esc(KIND_LABEL[k]||k)}</span> · ${esc(relTime(m.captured_at))}</div>
         </div>`;
       }).join('') : '<div class="live-empty">No memories yet — start the capture daemon, or copy some text and watch it appear.</div>';
       lastSig = sig;
@@ -829,7 +829,7 @@ function renderEvidence(ev, note){
     const del = e.id ? `<button class="ev-del" data-del="${esc(e.id)}" aria-label="Forget this memory" title="Forget this memory"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>` : '';
     return `<div class="ev ripple-host state-layer" tabindex="0" data-id="${esc(e.id||'')}"><div class="body">
       <div class="content">${esc(e.content)}</div>
-      <div class="meta"><span class="kdot k-${k}"></span><span class="kind-label">${label}</span> · ${when}${src? ' · '+src : ''}</div></div>
+      <div class="meta"><span class="kdot k-${esc(k)}"></span><span class="kind-label">${esc(label)}</span> · ${when}${src? ' · '+src : ''}</div></div>
       ${relev}${del}</div>`;
   }).join('');
   const word = note === undefined ? 'matching ' : (note ? note + ' ' : '');
