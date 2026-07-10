@@ -110,7 +110,7 @@ INDEX_HTML = r"""<!doctype html>
   .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex: none; }
   .status-dot.off { background: var(--error); }
 
-  main { max-width: 760px; margin: 0 auto; padding: 32px 24px 112px; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 24px 156px; }
 
   /* -- hero (h5 / subtitle1) ------------------------------------------------ */
   .hero { text-align: center; padding: 48px 0 8px; }
@@ -199,6 +199,20 @@ INDEX_HTML = r"""<!doctype html>
   .send:disabled { background: rgba(255,255,255,.12); color: var(--text-disabled);
     box-shadow: none; cursor: default; filter: none; }
 
+  /* -- time-scope filter chips --------------------------------------------- */
+  .scopes { gap: 6px; justify-content: flex-start; flex-wrap: wrap; margin-bottom: 8px; }
+  .scope-chip { height: 28px; padding: 0 12px; border-radius: var(--radius-chip);
+    border: 1px solid var(--divider); background: transparent; color: var(--text-secondary);
+    font: 500 12px/1 var(--font); letter-spacing: .02em; cursor: pointer;
+    display: inline-flex; align-items: center;
+    transition: background-color .15s, border-color .15s, color .15s; }
+  .scope-chip:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+  .scope-chip.active { background: rgba(144,202,249,.16); border-color: var(--primary); color: var(--primary); }
+  .scope-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .scope-tag { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+    font: 500 10px/1 var(--font); text-transform: uppercase; letter-spacing: 1px; color: var(--primary); }
+  .scope-tag .kdot { background: var(--primary); }
+
   /* -- circular indeterminate progress (SVG arc, not a two-tone border) ----- */
   .spin { width: 20px; height: 20px; animation: m-rotate 1.4s linear infinite; }
   .spin circle { fill: none; stroke: var(--primary); stroke-width: 2.5; stroke-linecap: round;
@@ -211,7 +225,7 @@ INDEX_HTML = r"""<!doctype html>
   }
 
   /* -- live capture drawer -------------------------------------------------- */
-  .live-drawer { position: fixed; top: 64px; right: 0; bottom: 80px; width: 340px; max-width: 92vw;
+  .live-drawer { position: fixed; top: 64px; right: 0; bottom: 124px; width: 340px; max-width: 92vw;
     background: var(--surface-02); box-shadow: var(--elevation-8); z-index: 9;
     display: flex; flex-direction: column;
     transform: translateX(100%); transition: transform 200ms ease-out; }
@@ -314,6 +328,12 @@ INDEX_HTML = r"""<!doctype html>
   <div class="live-list" id="livelist" aria-live="polite"></div>
 </aside>
 <div class="composer">
+  <div class="box scopes" id="scopes" role="group" aria-label="Time scope">
+    <button class="scope-chip ripple-host active" data-scope="all">All time</button>
+    <button class="scope-chip ripple-host" data-scope="today">Today</button>
+    <button class="scope-chip ripple-host" data-scope="yesterday">Yesterday</button>
+    <button class="scope-chip ripple-host" data-scope="week">This week</button>
+  </div>
   <div class="box">
     <div class="field">
       <input id="q" type="text" placeholder=" " autocomplete="off" tabindex="5" />
@@ -514,11 +534,13 @@ async function ask(text){
   send.disabled = true;
   try {
     const r = await fetch('/api/ask', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({question: text})});
+      body: JSON.stringify({question: text, scope: activeScope})});
     const j = await r.json();
     if(j.error){ bubble.innerHTML = 'Error: ' + esc(j.error); }
     else {
-      bubble.innerHTML = esc(j.answer)
+      const scopeName = {today:'Today', yesterday:'Yesterday', week:'This week'}[j.scope];
+      const scopeTag = scopeName ? `<div class="scope-tag"><span class="kdot"></span>Scope · ${scopeName}</div>` : '';
+      bubble.innerHTML = esc(j.answer) + scopeTag
         + `<div class="engine">answered by ${esc(j.engine)}</div>`
         + renderEvidence(j.evidence);
       wireRipples(bubble);
@@ -531,6 +553,12 @@ function go(){ const t = input.value.trim(); if(!t) return; input.value=''; ask(
 send.addEventListener('click', () => go());
 input.addEventListener('keydown', e => { if(e.key==='Enter') go(); });
 document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => ask(c.textContent)));
+
+let activeScope = 'all';
+document.querySelectorAll('.scope-chip').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('.scope-chip').forEach(x => x.classList.remove('active'));
+  c.classList.add('active'); activeScope = c.dataset.scope;
+}));
 </script>
 </body>
 </html>

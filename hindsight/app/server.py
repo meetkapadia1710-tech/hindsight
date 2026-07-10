@@ -23,6 +23,33 @@ client = SupermemoryClient()
 class AskRequest(BaseModel):
     question: str
     limit: int = 6
+    scope: str = "all"   # all | today | yesterday | week
+
+
+def _scope_bounds(scope: str):
+    """Return (start, end) datetimes in local time for a named time scope, or
+    None for 'all'. Used to answer time-scoped questions."""
+    from datetime import datetime, timedelta
+    now = datetime.now().astimezone()
+    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    if scope == "today":
+        return midnight, now
+    if scope == "yesterday":
+        return midnight - timedelta(days=1), midnight
+    if scope == "week":
+        return now - timedelta(days=7), now
+    return None
+
+
+def _within(iso: str, bounds) -> bool:
+    if not bounds:
+        return True
+    from datetime import datetime
+    try:
+        dt = datetime.fromisoformat(iso).astimezone()
+    except (ValueError, TypeError):
+        return False
+    return bounds[0] <= dt <= bounds[1]
 
 
 def _clean(text: str) -> str:
@@ -131,19 +158,29 @@ def forget_all() -> JSONResponse:
 
 @app.post("/api/ask")
 def ask(req: AskRequest) -> JSONResponse:
+    scope = (req.scope or "all").lower()
+    bounds = _scope_bounds(scope)
+    # Pull a wide candidate set, then (for a time scope) filter by capture time
+    # before answering, so narrowing the window never yields *more* results
+    # than "all time" and the window doesn't starve.
+    search_limit = max(req.limit * 6, 40)
     try:
-        raw = client.search(req.question, limit=req.limit)
+        raw = client.search(req.question, limit=search_limit)
     except Exception as exc:
         return JSONResponse(
             {"error": f"search failed: {exc}", "answer": "", "evidence": []},
             status_code=502,
         )
     memories = _normalize_results(raw)
+    if bounds:
+        memories = [m for m in memories if _within(m["captured_at"], bounds)]
+    memories = memories[:req.limit]
     result = answer_question(req.question, memories)
     return JSONResponse({
         "answer": result["answer"],
         "engine": result["engine"],
         "evidence": memories,
+        "scope": scope,
     })
 
 
