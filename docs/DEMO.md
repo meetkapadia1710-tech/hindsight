@@ -1,54 +1,71 @@
 # Hindsight — 3-minute demo script
 
-Target: ≤ 3:00. Record at 1080p. Keep the terminal + browser side by side.
+Target: ≤ 3:00. Record at 1080p. Keep a browser tab + the Hindsight app side by side.
 
 ## Before you hit record
 - `scripts\start_supermemory.ps1` — server up, `.env` has the key.
-- `py scripts\seed_demo.py` — a believable day of activity is in memory.
-- `py -m hindsight.app` — open http://localhost:8787 (shows "13 memories remembered").
-- Have a terminal ready running (or ready to run) `py -m hindsight.capture`.
+- `py scripts\seed_bulk.py 540` — a believable *month* of activity is in memory.
+- `py -m hindsight.app` — open http://localhost:8787 (header shows "540 memories remembered").
+- Warm the model once (ask any question and discard) so answers come back in ~1–2s.
+- Optional: have a terminal ready to run `py -m hindsight.capture` for the live loop.
 
 ## Beat sheet
 
-**0:00–0:20 — The hook.**
-> "This is Hindsight. It gives your PC a photographic memory — every window,
-> everything you copy, every page you read — and lets you ask about your own
-> past in plain English. The twist: none of it ever leaves your machine."
+**0:00–0:15 — The hook.**
+> "This is Hindsight — a photographic memory for your PC that never leaves your
+> PC. 540 memories of what I've read, copied, and done, all searchable, all
+> local."
 
-Show the app. Point at the header: **"13 memories remembered · Local · Offline-capable."**
+Point at the header: **"540 memories remembered · Local · Offline-capable."**
 
-**0:20–1:05 — Ask your past.**
-Type, one at a time (let each answer + evidence render):
-- *"What was I reading about Microsoft Recall?"* → grounded answer + the Ars Technica card.
-- *"Was I in any meetings today?"* → the Zoom hackathon office hours.
-- *"What did I copy to my clipboard?"* → the clipboard entries.
-> "Every answer is written by a local model and backed by an evidence
-> timeline — real memories with timestamps and sources. Nothing is made up."
+**0:15–1:00 — The live loop (the money shot).** *Open the **Live** drawer.*
+Copy a line of text on camera (e.g. a sentence from an article).
+> "Watch the feed — I just copied that, and Hindsight remembered it in real
+> time."
 
-**1:05–1:45 — It's actually live.**
-Switch to the terminal, run `py -m hindsight.capture`. Open a browser tab to an
-article, copy a line of text. Back in the app, ask about what you just did.
-> "The capture daemon is watching window titles, the clipboard, and browser
-> history — with a privacy filter that drops password managers and anything
-> that looks like a secret."
+The new memory slides in at the top of the Live drawer. Immediately ask about it:
+> "…and I can already ask about it."
 
-**1:45–2:25 — The money shot: pull the plug.**
-Turn off Wi‑Fi (toggle it on camera). Ask another question. It still answers.
+Type a question referencing what you just copied → grounded answer with that
+memory as evidence. **That closed loop — copy → remembered → answered — is the
+whole product in 30 seconds.**
+
+**1:00–1:35 — Ask your past, scoped in time.**
+Ask *"What was I reading about Microsoft Recall?"* → grounded answer + the Ars
+Technica card with a relevance bar. Then tap the **Today** chip and ask
+*"What did I work on?"* → answer card tagged **Scope · Today**, evidence all
+from today.
+> "Every answer is written by a local model, backed by an evidence timeline —
+> real memories with timestamps and sources — and I can scope recall to today,
+> yesterday, or this week."
+
+**1:35–2:05 — Summarize my day.**
+Click **Summarize my day**.
+> "One click, and it narrates my whole day from 540 memories — morning research,
+> afternoon coding, the sites and apps — every line backed by evidence."
+
+**2:05–2:40 — Your memory, your rules (vs. Recall).** *Open **Privacy**.*
+> "Microsoft Recall got recalled because users had no control. Here: pause
+> capture…" *(toggle — the app bar flips to a red PAUSED)* "…turn any source
+> off, exclude a domain like my bank…" *(add `chase.com`)* "…delete a single
+> memory…" *(trash-icon a row)* "…or burn it all." *(Forget all → confirm →
+> header hits 0, then don't save — or re-seed after)*
+> "Pause, per-source, per-memory, per-domain, or everything. Your memory, your
+> rules."
+
+**2:40–2:55 — Pull the plug.**
+Turn off Wi‑Fi on camera. Ask another question. It still answers.
 > "Embeddings, storage, search, and the language model all run on localhost
-> through Supermemory Local. Turn off the internet and your second brain keeps
-> working. This is the whole point — a Recall you can actually trust."
-
-**2:25–2:55 — Your data, your call.**
-Click **Forget all**, confirm. Header drops to "0 memories."
-> "And because it's yours, you can wipe every memory in one click. Local by
-> construction, private by design."
+> through Supermemory Local. Wi-Fi off — my second brain keeps working."
 
 **2:55–3:00 — Close.**
 > "Hindsight. Your PC's memory — that never leaves your PC. Built on
 > Supermemory Local."
 
 ## Tips
-- Pre-load the model once before recording (first Ollama call warms it) so
-  answers come back in ~1–2s on camera.
-- If an answer is slow, the extractive fallback still shows the right memories
-  instantly — the evidence timeline is the star either way.
+- If the GPU is busy and an answer is slow, the instant extractive fallback
+  still shows the right evidence — the timeline is the star either way.
+- If you demo **Forget all** on camera, re-seed afterward with
+  `py scripts\seed_bulk.py 540` before the next take.
+- Free VRAM before recording (close other GPU apps) so answers stay ~1–2s;
+  `ollama stop qwen2.5:3b-instruct` frees ~2 GB when you're done.
