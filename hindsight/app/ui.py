@@ -9,94 +9,101 @@ INDEX_HTML = r"""<!doctype html>
 <title>Hindsight</title>
 <style>
   :root {
-    --bg: #0b0d10; --panel: #14181d; --panel-2: #1b2027;
-    --line: #262c34; --text: #e8ecf1; --muted: #8a94a3;
-    --accent: #5b9dff; --accent-2: #7c5cff; --good: #37d39b;
-    --clip: #ffb454; --win: #5b9dff; --browser: #37d39b; --ocr: #ff7ab6;
+    --bg: #0a0b0d; --surface: #131518; --surface-2: #17191d;
+    --border: #23262b; --text: #eaecef; --text-muted: #878d97; --text-faint: #5c6169;
+    --accent: #6b8cff; --good: #34c98e; --bad: #e5555f;
+    --k-browser: #34c98e; --k-window: #6b8cff; --k-clip: #e0a952; --k-ocr: #d97bb0;
+    --font-serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; background: radial-gradient(1200px 600px at 70% -10%, #1a2130 0%, var(--bg) 55%);
-    color: var(--text); font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
-    min-height: 100vh;
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.6 var(--font-sans); min-height: 100vh;
   }
   header {
-    display: flex; align-items: center; gap: 14px; padding: 18px 28px;
-    border-bottom: 1px solid var(--line); position: sticky; top: 0;
-    background: rgba(11,13,16,.8); backdrop-filter: blur(10px); z-index: 5;
+    display: flex; align-items: center; gap: 16px; padding: 16px 24px;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0;
+    background: var(--bg); z-index: 5;
   }
-  .logo { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
-  .logo span { background: linear-gradient(90deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .tag { color: var(--muted); font-size: 13px; }
-  .hstats { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+  .logo { font-family: var(--font-serif); font-size: 21px; font-weight: 600; letter-spacing: -.01em; }
+  .logo span { color: var(--accent); }
+  .tag { color: var(--text-muted); font-size: 12.5px; }
+  .hstats { margin-left: auto; color: var(--text-muted); font-size: 12.5px; }
   .forget {
-    background: transparent; border: 1px solid var(--line); color: var(--muted);
-    border-radius: 999px; padding: 6px 12px; font-size: 12.5px; cursor: pointer;
-    transition: .15s;
+    background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+    border-radius: 8px; padding: 6px 12px; font-size: 12.5px; cursor: pointer;
+    font-family: var(--font-sans); transition: border-color .14s ease-out, color .14s ease-out;
   }
-  .forget:hover { border-color: #ff5c5c; color: #ff5c5c; }
+  .forget:hover { border-color: var(--bad); color: var(--bad); }
   .badge {
     display: flex; align-items: center; gap: 8px;
-    padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
-    font-size: 12.5px; color: var(--good); background: rgba(55,211,155,.06);
+    padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 12.5px; color: var(--text-muted);
   }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good);
-    box-shadow: 0 0 10px var(--good); }
-  .dot.off { background: #ff5c5c; box-shadow: 0 0 10px #ff5c5c; }
-  main { max-width: 900px; margin: 0 auto; padding: 28px 20px 140px; }
-  .hero { text-align: center; margin: 26px 0 30px; }
-  .hero h1 { font-size: 30px; margin: 0 0 8px; letter-spacing: -.03em; }
-  .hero p { color: var(--muted); margin: 0; }
-  .chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-    margin-top: 20px; }
-  .chip { padding: 8px 14px; border: 1px solid var(--line); border-radius: 10px;
-    background: var(--panel); color: var(--text); cursor: pointer; font-size: 13.5px;
-    transition: .15s; }
-  .chip:hover { border-color: var(--accent); background: var(--panel-2); }
-  .thread { display: flex; flex-direction: column; gap: 22px; margin-top: 10px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex: none; }
+  .dot.off { background: var(--bad); }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 24px 140px; }
+  .hero { text-align: center; margin: 32px 0 24px; }
+  .hero h1 { font-family: var(--font-serif); font-weight: 600; font-size: 28px;
+    margin: 0 0 8px; letter-spacing: -.01em; }
+  .hero p { color: var(--text-muted); margin: 0; font-size: 14.5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    margin-top: 16px; }
+  .chip { padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--text); cursor: pointer; font-size: 13.5px;
+    transition: border-color .14s ease-out, background .14s ease-out; }
+  .chip:hover { border-color: var(--accent); background: var(--surface-2); }
+  .thread { display: flex; flex-direction: column; gap: 24px; margin-top: 8px; }
   .msg { display: flex; gap: 12px; }
   .msg .who { width: 30px; height: 30px; border-radius: 8px; flex: none;
-    display: grid; place-items: center; font-size: 14px; }
-  .msg.user .who { background: var(--panel-2); }
-  .msg.ai .who { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
-  .bubble { background: var(--panel); border: 1px solid var(--line);
-    border-radius: 12px; padding: 14px 16px; flex: 1; white-space: pre-wrap; }
-  .msg.user .bubble { background: var(--panel-2); }
-  .engine { font-size: 11.5px; color: var(--muted); margin-top: 10px; }
-  .evidence { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
-  .evidence h4 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase;
-    letter-spacing: .08em; color: var(--muted); }
-  .ev { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+    display: grid; place-items: center; font-size: 13px; font-weight: 700;
+    font-family: var(--font-sans); }
+  .msg.user .who { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+  .msg.ai .who { background: var(--accent); color: #0a0b0d; }
+  .bubble { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; flex: 1; white-space: pre-wrap;
+    font-size: 14.5px; line-height: 1.6; }
+  .msg.user .bubble { background: var(--surface-2); }
+  .engine { font-size: 11.5px; color: var(--text-faint); margin-top: 10px; }
+  .evidence { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+  .evidence h4 { margin: 0 0 10px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--text-faint); font-weight: 600; }
+  .ev { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .ev:last-child { border-bottom: 0; }
-  .ev .rail { width: 3px; border-radius: 2px; flex: none; }
-  .ev.kind-clipboard .rail { background: var(--clip); }
-  .ev.kind-window .rail { background: var(--win); }
-  .ev.kind-browser .rail { background: var(--browser); }
-  .ev.kind-ocr .rail { background: var(--ocr); }
   .ev .body { flex: 1; min-width: 0; }
-  .ev .content { font-size: 13.5px; }
-  .ev .meta { font-size: 11.5px; color: var(--muted); margin-top: 3px; word-break: break-word; }
-  .ev .relev { flex: none; align-self: center; display: flex; align-items: center; gap: 7px;
-    font-size: 11px; color: var(--muted); }
-  .ev .relev .bar { width: 44px; height: 5px; border-radius: 3px; background: var(--panel-2);
+  .ev .content { font-size: 13.5px; color: var(--text); }
+  .ev .meta { font-size: 11.5px; color: var(--text-faint); margin-top: 4px;
+    word-break: break-word; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .kdot { width: 6px; height: 6px; border-radius: 50%; flex: none; display: inline-block; }
+  .kdot.k-browser { background: var(--k-browser); }
+  .kdot.k-window { background: var(--k-window); }
+  .kdot.k-clipboard { background: var(--k-clip); }
+  .kdot.k-ocr { background: var(--k-ocr); }
+  .kind-label { text-transform: uppercase; letter-spacing: .05em; font-size: 10.5px; color: var(--text-faint); }
+  .ev .relev { flex: none; align-self: center; display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--text-faint); }
+  .ev .relev .bar { width: 48px; height: 4px; border-radius: 2px; background: var(--surface-2);
     overflow: hidden; }
-  .ev .relev .bar > span { display: block; height: 100%; border-radius: 3px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .ev .relev .bar > span { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
   .composer { position: fixed; bottom: 0; left: 0; right: 0;
-    background: linear-gradient(180deg, transparent, var(--bg) 30%); padding: 20px; }
-  .composer .box { max-width: 900px; margin: 0 auto; display: flex; gap: 10px; }
-  input[type=text] { flex: 1; background: var(--panel); border: 1px solid var(--line);
-    border-radius: 12px; padding: 14px 16px; color: var(--text); font-size: 15px; outline: none; }
-  input[type=text]:focus { border-color: var(--accent); }
-  button.send { background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    border: 0; color: white; font-weight: 600; padding: 0 22px; border-radius: 12px;
-    cursor: pointer; font-size: 15px; }
+    background: var(--surface-2); border-top: 1px solid var(--border); padding: 16px 24px; }
+  .composer .box { max-width: 760px; margin: 0 auto; display: flex; gap: 8px; }
+  input[type=text] { flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; color: var(--text); font-size: 14.5px;
+    font-family: var(--font-sans); outline: none;
+    transition: border-color .14s ease-out, box-shadow .14s ease-out; }
+  input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(107,140,255,.15); }
+  button.send { background: var(--accent); border: 0; color: #0a0b0d; font-weight: 600;
+    padding: 0 24px; border-radius: 10px; cursor: pointer; font-size: 14.5px;
+    font-family: var(--font-sans); transition: opacity .14s ease-out; }
+  button.send:hover { opacity: .92; }
   button.send:disabled { opacity: .5; cursor: default; }
-  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff5;
-    border-top-color: #fff; border-radius: 50%; animation: s .7s linear infinite; }
-  @keyframes s { to { transform: rotate(360deg); } }
-  a { color: var(--accent); }
+  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border);
+    border-top-color: var(--text-muted); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -152,17 +159,17 @@ $('#forget').onclick = async () => {
   refreshStats();
 };
 
-const KIND_ICON = { clipboard:'📋', window:'🪟', browser:'🌐', ocr:'👁️' };
+const KIND_LABEL = { clipboard:'Clipboard', window:'Window', browser:'Browser', ocr:'OCR' };
 function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
 function addUser(text){
   const el = document.createElement('div'); el.className = 'msg user';
-  el.innerHTML = `<div class="who">🧑</div><div class="bubble">${esc(text)}</div>`;
+  el.innerHTML = `<div class="who">Y</div><div class="bubble">${esc(text)}</div>`;
   thread.appendChild(el); scroll();
 }
 function addAI(){
   const el = document.createElement('div'); el.className = 'msg ai';
-  el.innerHTML = `<div class="who">🧠</div><div class="bubble"><span class="spin"></span></div>`;
+  el.innerHTML = `<div class="who">H</div><div class="bubble"><span class="spin"></span></div>`;
   thread.appendChild(el); scroll(); return el;
 }
 function renderEvidence(ev){
@@ -172,12 +179,13 @@ function renderEvidence(ev){
   const shown = ev.filter(e => (e.score||0) >= top - 0.15).slice(0,5);
   const rows = shown.map(e => {
     const k = e.kind || 'window';
+    const label = KIND_LABEL[k] || k;
     const when = e.captured_at ? new Date(e.captured_at).toLocaleString() : '';
     const src = e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noreferrer">${esc(e.source)}</a>` : esc(e.source);
     const pct = Math.round((e.score||0)*100);
-    return `<div class="ev kind-${k}"><div class="rail"></div><div class="body">
-      <div class="content">${KIND_ICON[k]||'•'} ${esc(e.content)}</div>
-      <div class="meta">${when}${src? ' · '+src : ''}</div></div>
+    return `<div class="ev"><div class="body">
+      <div class="content">${esc(e.content)}</div>
+      <div class="meta"><span class="kdot k-${k}"></span><span class="kind-label">${label}</span> · ${when}${src? ' · '+src : ''}</div></div>
       <div class="relev" title="relevance ${pct}%"><div class="bar"><span style="width:${pct}%"></span></div>${pct}%</div></div>`;
   }).join('');
   return `<div class="evidence"><h4>Evidence · ${shown.length} matching ${shown.length===1?'memory':'memories'}</h4>${rows}</div>`;
@@ -191,7 +199,7 @@ async function ask(text){
     const r = await fetch('/api/ask', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({question: text})});
     const j = await r.json();
-    if(j.error){ bubble.innerHTML = '⚠️ ' + esc(j.error); }
+    if(j.error){ bubble.innerHTML = 'Error: ' + esc(j.error); }
     else {
       bubble.innerHTML = esc(j.answer)
         + `<div class="engine">answered by ${esc(j.engine)}</div>`
