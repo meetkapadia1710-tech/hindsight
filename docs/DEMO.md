@@ -4,7 +4,11 @@ Target: ≤ 3:00. Record at 1080p. Keep a browser tab + the Hindsight app side b
 
 ## Before you hit record
 - `scripts\start_supermemory.ps1` — server up, `.env` has the key.
-- `py scripts\seed_bulk.py 540` — a believable *month* of activity is in memory.
+- `py scripts\seed_bulk.py 540` — a believable *month* of activity in memory.
+  **Run this the same day you record** — the anchor memories are dated relative
+  to now, so "Today" scope and the daily digest are only populated for the day
+  you seed. Verify with `py scripts\demo_check.py` (all anchors + Today + digest
+  must pass).
 - `py -m hindsight.app` — open http://localhost:8787 (header shows "540 memories remembered").
 - Warm the model once (ask any question and discard) so answers come back in ~1–2s.
 - Optional: have a terminal ready to run `py -m hindsight.capture` for the live loop.
