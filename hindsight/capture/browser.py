@@ -17,6 +17,7 @@ from pathlib import Path
 
 from .ingest import Event, Ingestor
 from . import privacy
+from ..state import is_excluded
 
 LOCAL = os.environ.get("LOCALAPPDATA", "")
 # Chromium epoch: microseconds since 1601-01-01.
@@ -98,6 +99,8 @@ def _sync_one(name: str, path: Path, ingestor: Ingestor) -> int:
         highest = max(highest, visit_time)
         title = (title or "").strip()
         if not title or not privacy.window_allowed(name, title):
+            continue
+        if is_excluded(url, title):   # user's exclusion list (e.g. banking sites)
             continue
         ingestor.submit(Event(
             kind="browser",

@@ -264,6 +264,51 @@ INDEX_HTML = r"""<!doctype html>
     to   { opacity: 1; transform: translateY(0); box-shadow: none; }
   }
 
+  /* -- privacy panel (reuses the .live-drawer shell) ------------------------ */
+  .priv-body { flex: 1; overflow-y: auto; padding: 16px; }
+  .priv-pause { display: flex; align-items: center; gap: 12px; padding: 16px;
+    border-radius: var(--radius); background: var(--surface-01); box-shadow: var(--elevation-1);
+    margin-bottom: 20px; }
+  .priv-pause .grow { flex: 1; }
+  .priv-status { font: 500 15px/1.2 var(--font); color: var(--success); }
+  .priv-status.paused { color: var(--error); }
+  .priv-section-title { font: 500 10px/1 var(--font); text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--text-secondary); margin: 4px 0 8px; }
+  .priv-row { display: flex; align-items: center; gap: 12px; padding: 10px 4px; }
+  .priv-row .grow { flex: 1; font: 400 14px/1.3 var(--font); color: var(--text-primary); }
+  .priv-row .sub { font: 400 11px/1.2 var(--font); color: var(--text-secondary); margin-top: 2px; }
+  .priv-divider { height: 1px; background: var(--divider); margin: 16px 0; }
+  /* Material switch */
+  .switch { position: relative; width: 36px; height: 20px; flex: none; display: inline-block; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 2; }
+  .switch .track { position: absolute; inset: 3px 0; border-radius: 8px; background: var(--surface-12);
+    transition: background-color .15s; }
+  .switch .thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--text-secondary); transition: transform .15s, background-color .15s; box-shadow: var(--elevation-1); }
+  .switch input:checked ~ .track { background: rgba(144,202,249,.5); }
+  .switch input:checked ~ .thumb { transform: translateX(16px); background: var(--primary); }
+  .switch input:focus-visible ~ .track { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .priv-excl-add { display: flex; gap: 8px; margin: 4px 0 12px; }
+  .priv-excl-add input { flex: 1; background: var(--surface-02); border: 1px solid var(--divider);
+    border-radius: var(--radius); padding: 10px 12px; color: var(--text-primary); font: 400 13px/1.2 var(--font); outline: none; }
+  .priv-excl-add input:focus { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+  .priv-excl-add button { border: none; border-radius: var(--radius); background: var(--primary);
+    color: var(--primary-on); font: 500 13px/1 var(--font); text-transform: uppercase; letter-spacing: .02857em;
+    padding: 0 14px; cursor: pointer; }
+  .excl-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px;
+    border-radius: var(--radius-chip); background: var(--surface-03); color: var(--text-primary);
+    font: 400 13px/1 var(--font); margin: 0 6px 6px 0; }
+  .excl-chip button { background: transparent; border: none; color: var(--text-secondary); cursor: pointer;
+    display: inline-flex; padding: 2px; border-radius: 50%; }
+  .excl-chip button:hover { background: rgba(255,255,255,.1); color: var(--error); }
+  .priv-empty { font: 400 12px/1.4 var(--font); color: var(--text-secondary); }
+  /* per-evidence delete button */
+  .ev-del { flex: none; align-self: center; background: transparent; border: none; cursor: pointer;
+    color: var(--text-disabled); padding: 6px; border-radius: 50%; display: inline-flex;
+    transition: background-color .12s, color .12s; }
+  .ev:hover .ev-del { color: var(--text-secondary); }
+  .ev-del:hover { background: rgba(244,67,54,.12); color: var(--error); }
+
   /* -- dialog (replaces native confirm() for Forget all) --------------------- */
   .m-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.5);
     display: flex; align-items: center; justify-content: center; z-index: 50;
@@ -298,7 +343,12 @@ INDEX_HTML = r"""<!doctype html>
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
     Live
   </button>
-  <button class="btn-text ripple-host state-layer" id="forget" tabindex="8"
+  <button class="btn-text ripple-host state-layer" id="privacybtn" tabindex="8"
+    aria-label="Privacy controls" title="Pause capture, choose sources, exclude sites" style="color:var(--text-secondary)">
+    <svg class="ic" id="privacyicon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <span id="privacylabel">Privacy</span>
+  </button>
+  <button class="btn-text ripple-host state-layer" id="forget" tabindex="9"
     aria-label="Forget all" title="Permanently delete every stored memory">
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     Forget all
@@ -340,6 +390,39 @@ INDEX_HTML = r"""<!doctype html>
     </button>
   </div>
   <div class="live-list" id="livelist" aria-live="polite"></div>
+</aside>
+<aside class="live-drawer" id="privacydrawer" aria-label="Privacy controls" aria-hidden="true">
+  <div class="live-head">
+    <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--primary)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <div class="grow">
+      <div class="live-title">Privacy</div>
+      <div class="live-sub">your memory, your rules</div>
+    </div>
+    <button class="live-close" id="privclose" aria-label="Close privacy panel">
+      <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="priv-body">
+    <div class="priv-pause">
+      <div class="grow">
+        <div class="priv-status" id="privstatus">Recording</div>
+        <div class="live-sub" id="privstatussub">capturing new activity</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="recsw" checked aria-label="Recording"><span class="track"></span><span class="thumb"></span></label>
+    </div>
+    <div class="priv-section-title">Capture sources</div>
+    <div class="priv-row"><div class="grow">Browser history<div class="sub">pages you visit</div></div><label class="switch"><input type="checkbox" data-src="browser" aria-label="Capture browser history"><span class="track"></span><span class="thumb"></span></label></div>
+    <div class="priv-row"><div class="grow">Window titles<div class="sub">apps and files in focus</div></div><label class="switch"><input type="checkbox" data-src="window" aria-label="Capture window titles"><span class="track"></span><span class="thumb"></span></label></div>
+    <div class="priv-row"><div class="grow">Clipboard<div class="sub">text you copy</div></div><label class="switch"><input type="checkbox" data-src="clipboard" aria-label="Capture clipboard"><span class="track"></span><span class="thumb"></span></label></div>
+    <div class="priv-row"><div class="grow">Screen OCR<div class="sub">on-screen text (opt-in)</div></div><label class="switch"><input type="checkbox" data-src="ocr" aria-label="Capture screen OCR"><span class="track"></span><span class="thumb"></span></label></div>
+    <div class="priv-divider"></div>
+    <div class="priv-section-title">Never capture</div>
+    <div class="priv-excl-add">
+      <input id="exclinput" type="text" placeholder="domain or app name…" aria-label="Add an exclusion" autocomplete="off" />
+      <button class="ripple-host" id="excladd">Add</button>
+    </div>
+    <div id="excllist"></div>
+  </div>
 </aside>
 <div class="composer">
   <div class="box scopes" id="scopes" role="group" aria-label="Time scope">
@@ -441,6 +524,7 @@ async function pollRecent(){
   } catch {}
 }
 function openLive(){
+  closePrivacy();
   liveOpen = true; liveDrawer.classList.add('open'); liveDrawer.setAttribute('aria-hidden','false');
   seenIds = new Set(); livePrimed = false; lastSig = '';
   pollRecent(); liveTimer = setInterval(pollRecent, 4000);
@@ -451,6 +535,58 @@ function closeLive(){
 }
 $('#livetoggle').addEventListener('click', () => liveOpen ? closeLive() : openLive());
 $('#liveclose').addEventListener('click', closeLive);
+
+// -- privacy control center ------------------------------------------------
+const privDrawer = $('#privacydrawer');
+let settings = { paused:false, sources:{}, exclusions:[] };
+const X_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+function applyPrivacyBtn(){
+  $('#privacylabel').textContent = settings.paused ? 'Paused' : 'Privacy';
+  $('#privacybtn').style.color = settings.paused ? 'var(--error)' : 'var(--text-secondary)';
+}
+function renderPrivacy(){
+  $('#recsw').checked = !settings.paused;
+  const st = $('#privstatus');
+  st.textContent = settings.paused ? 'Paused' : 'Recording';
+  st.classList.toggle('paused', settings.paused);
+  $('#privstatussub').textContent = settings.paused ? 'not capturing new activity' : 'capturing new activity';
+  document.querySelectorAll('[data-src]').forEach(sw => { sw.checked = settings.sources[sw.dataset.src] !== false; });
+  const list = $('#excllist');
+  list.innerHTML = (settings.exclusions && settings.exclusions.length)
+    ? settings.exclusions.map(x => `<span class="excl-chip">${esc(x)}<button data-x="${esc(x)}" aria-label="Remove ${esc(x)}">${X_SVG}</button></span>`).join('')
+    : '<div class="priv-empty">Nothing excluded yet. Add a domain (chase.com) or app name to never capture it.</div>';
+  applyPrivacyBtn();
+}
+async function loadSettings(){
+  try { const r = await fetch('/api/settings'); settings = await r.json(); } catch {}
+  renderPrivacy();
+}
+async function saveSettings(patch){
+  try {
+    const r = await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(patch)});
+    settings = await r.json();
+  } catch {}
+  renderPrivacy();
+}
+$('#recsw').addEventListener('change', e => saveSettings({ paused: !e.target.checked }));
+document.querySelectorAll('[data-src]').forEach(sw =>
+  sw.addEventListener('change', () => saveSettings({ sources: { [sw.dataset.src]: sw.checked } })));
+$('#excladd').addEventListener('click', () => {
+  const v = $('#exclinput').value.trim(); if (!v) return;
+  const cur = settings.exclusions || [];
+  if (!cur.includes(v)) saveSettings({ exclusions: cur.concat([v]) });
+  $('#exclinput').value = '';
+});
+$('#exclinput').addEventListener('keydown', e => { if (e.key==='Enter'){ e.preventDefault(); $('#excladd').click(); } });
+$('#excllist').addEventListener('click', e => {
+  const b = e.target.closest('[data-x]'); if (!b) return;
+  saveSettings({ exclusions: (settings.exclusions||[]).filter(x => x !== b.dataset.x) });
+});
+function openPrivacy(){ closeLive(); privDrawer.classList.add('open'); privDrawer.setAttribute('aria-hidden','false'); loadSettings(); }
+function closePrivacy(){ privDrawer.classList.remove('open'); privDrawer.setAttribute('aria-hidden','true'); }
+$('#privacybtn').addEventListener('click', () => privDrawer.classList.contains('open') ? closePrivacy() : openPrivacy());
+$('#privclose').addEventListener('click', closePrivacy);
+loadSettings();   // reflect paused state in the app bar from load
 
 // Material Dialog — replaces native confirm() for "Forget all". The gate
 // (destructive call only fires if the user picks the confirm action) is
@@ -539,10 +675,11 @@ function renderEvidence(ev, note){
     const relev = (e.score||0) > 0
       ? `<div class="relev" title="relevance ${pct}%"><div class="bar"><span style="width:${pct}%"></span></div>${pct}%</div>`
       : '';
-    return `<div class="ev ripple-host state-layer" tabindex="0"><div class="body">
+    const del = e.id ? `<button class="ev-del" data-del="${esc(e.id)}" aria-label="Forget this memory" title="Forget this memory"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>` : '';
+    return `<div class="ev ripple-host state-layer" tabindex="0" data-id="${esc(e.id||'')}"><div class="body">
       <div class="content">${esc(e.content)}</div>
       <div class="meta"><span class="kdot k-${k}"></span><span class="kind-label">${label}</span> · ${when}${src? ' · '+src : ''}</div></div>
-      ${relev}</div>`;
+      ${relev}${del}</div>`;
   }).join('');
   const word = note === undefined ? 'matching ' : (note ? note + ' ' : '');
   return `<div class="evidence"><h4>Evidence · ${shown.length} ${word}${shown.length===1?'memory':'memories'}</h4>${rows}</div>`;
@@ -584,6 +721,18 @@ async function runDigest(){
   send.disabled = false; scroll();
 }
 $('#digestbtn').addEventListener('click', runDigest);
+
+// Per-memory forget: delete icon on any evidence row (delegated).
+thread.addEventListener('click', async (e) => {
+  const b = e.target.closest('.ev-del'); if (!b) return;
+  e.stopPropagation();
+  const ok = await materialConfirm('Forget this memory?',
+    'This permanently deletes this single memory from your history.', 'Delete', 'Cancel');
+  if (!ok) return;
+  try { await fetch('/api/forget_one', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id: b.dataset.del})}); } catch {}
+  const row = b.closest('.ev'); if (row) row.remove();
+  refreshStats();
+});
 
 function scroll(){ window.scrollTo(0, document.body.scrollHeight); }
 function go(){ const t = input.value.trim(); if(!t) return; input.value=''; ask(t); }

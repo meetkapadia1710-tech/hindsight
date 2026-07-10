@@ -15,6 +15,7 @@ import time
 
 from ..config import CONFIG
 from ..sm_client import SupermemoryClient
+from ..state import get_state, is_excluded
 from . import privacy
 from .clipboard import ClipboardWatcher
 from .ingest import Event, Ingestor
@@ -45,6 +46,7 @@ class CaptureDaemon:
         self._last_browser_sync = 0.0
         self._last_ocr = 0.0
         self._ocr_busy = False
+        self._srcs: dict = {}
 
     # -- lifecycle ---------------------------------------------------------
     def run(self) -> None:
@@ -73,12 +75,19 @@ class CaptureDaemon:
                   f"failed={self.ingestor.failed}")
 
     def _tick(self) -> None:
+        # Honour the runtime privacy state the app writes (pause + per-source
+        # toggles). Read fresh each tick so changes take effect immediately.
+        st = get_state()
+        if st.get("paused"):
+            return
+        self._srcs = st.get("sources", {})
         now = time.monotonic()
-        if self.do_windows:
+        if self.do_windows and self._srcs.get("window", True):
             self._tick_window(now)
-        if self.do_clipboard:
+        if self.do_clipboard and self._srcs.get("clipboard", True):
             self._tick_clipboard()
-        if self.do_browser and (now - self._last_browser_sync) >= self.browser_sync:
+        if (self.do_browser and self._srcs.get("browser", True)
+                and (now - self._last_browser_sync) >= self.browser_sync):
             self._tick_browser()
             self._last_browser_sync = now
 
@@ -100,12 +109,13 @@ class CaptureDaemon:
         # Same window still focused — commit once it clears the dwell time.
         if (now - self._window_since) >= self.min_focus:
             self._window_committed = True
-            if privacy.window_allowed(win.app, win.title):
+            if privacy.window_allowed(win.app, win.title) and not is_excluded(win.app, win.title):
                 self.ingestor.submit(Event(
                     kind="window", content=win.title, source=win.app,
                     metadata={"app": win.app},
                 ))
-                if self.do_ocr and (now - self._last_ocr) >= self.ocr_min_interval:
+                if (self.do_ocr and self._srcs.get("ocr", False)
+                        and (now - self._last_ocr) >= self.ocr_min_interval):
                     self._last_ocr = now
                     self._ocr_current_window(win)
 
@@ -136,7 +146,7 @@ class CaptureDaemon:
     # -- clipboard ---------------------------------------------------------
     def _tick_clipboard(self) -> None:
         text = self.clipboard.poll()
-        if text and privacy.clipboard_allowed(text):
+        if text and privacy.clipboard_allowed(text) and not is_excluded(text):
             preview = text if len(text) <= 280 else text[:277] + "..."
             self.ingestor.submit(Event(kind="clipboard", content=preview))
 

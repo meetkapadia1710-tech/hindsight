@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from ..config import CONFIG
 from ..sm_client import SupermemoryClient
+from .. import state as runtime_state
 from .answer import answer_question, summarize_day
 from .ui import INDEX_HTML
 
@@ -154,6 +155,37 @@ def forget_all() -> JSONResponse:
         return JSONResponse(client.forget_all())
     except Exception as exc:
         return JSONResponse({"error": str(exc)}, status_code=502)
+
+
+class ForgetOneRequest(BaseModel):
+    id: str
+
+
+@app.post("/api/forget_one")
+def forget_one(req: ForgetOneRequest) -> JSONResponse:
+    if not req.id:
+        return JSONResponse({"error": "missing id"}, status_code=400)
+    try:
+        return JSONResponse(client.forget_one(req.id))
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=502)
+
+
+class SettingsPatch(BaseModel):
+    paused: bool | None = None
+    sources: dict[str, bool] | None = None
+    exclusions: list[str] | None = None
+
+
+@app.get("/api/settings")
+def get_settings() -> dict[str, Any]:
+    """Current privacy/capture state (shared with the daemon via a state file)."""
+    return runtime_state.get_state()
+
+
+@app.post("/api/settings")
+def set_settings(patch: SettingsPatch) -> JSONResponse:
+    return JSONResponse(runtime_state.update_state(patch.model_dump(exclude_none=True)))
 
 
 class DigestRequest(BaseModel):
