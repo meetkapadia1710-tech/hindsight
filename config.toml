@@ -27,13 +27,16 @@ excluded_processes = [
 excluded_title_keywords = [
     "InPrivate", "Incognito", "Private Browsing", "password", "passphrase",
 ]
-# Clipboard entries matching these patterns are dropped (secrets).
+# Clipboard entries matching these patterns are dropped (secrets). Note:
+# generic passwords aren't content-detectable — they're covered instead by the
+# excluded_processes list above (password managers) and private-window filtering.
 clipboard_deny_patterns = [
     "^sm_",                     # supermemory api keys :)
     "^sk-",                     # openai-style keys
     "^ghp_", "^github_pat_",    # github tokens
     "^AKIA",                    # aws access keys
     "-----BEGIN .*PRIVATE KEY",
+    '(?:\d[ -]?){13,16}',       # 13-16 digit card numbers (spaces/dashes ok)
 ]
 max_clipboard_chars = 2000
 
