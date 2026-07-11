@@ -13,7 +13,7 @@ Windows (native Python)                     WSL2 · Ubuntu
 │ query app :8787       │ ────────────────► │  · local embeddings (bge)  │
 └───────────────────────┘                   │  · encrypted local storage │
                                             │  · memory agent → Ollama   │
-                                            │ ollama :11434 (llama3.2)   │
+                                            │ ollama :11434 (qwen2.5:3b) │
                                             └────────────────────────────┘
 ```
 
@@ -41,7 +41,7 @@ Install Ollama + the local model (powers Supermemory's memory agent, fully offli
 
 ```powershell
 wsl -d Ubuntu-24.04 -u root -- bash -lc "curl -fsSL https://ollama.com/install.sh | sh"
-wsl -d Ubuntu-24.04 -u root -- bash -lc "ollama serve >/root/ollama.log 2>&1 & sleep 3; ollama pull llama3.2:3b"
+wsl -d Ubuntu-24.04 -u root -- bash -lc "ollama serve >/root/ollama.log 2>&1 & sleep 3; ollama pull qwen2.5:3b-instruct"
 ```
 
 Point Supermemory's memory agent at Ollama:
@@ -50,7 +50,7 @@ Point Supermemory's memory agent at Ollama:
 # /root/.supermemory/env
 OPENAI_API_KEY='ollama'
 OPENAI_BASE_URL='http://localhost:11434/v1'
-OPENAI_MODEL='llama3.2:3b'
+OPENAI_MODEL='qwen2.5:3b-instruct'
 ```
 
 ## 2. Start the server
