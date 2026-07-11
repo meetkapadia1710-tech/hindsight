@@ -78,7 +78,7 @@ Supermemory Local makes that possible: embeddings, storage, and hybrid semantic 
 - **All storage & search:** Supermemory Local on `localhost:6767`. Works offline.
 - **Pause capture:** a switch in the app bar; the daemon stops immediately (shared via `.hindsight/state.json`).
 - **Per-source toggles:** turn browser / window / clipboard / OCR capture on or off.
-- **Exclusion list:** add domains or app names (e.g. your bank) that are never captured; secrets and password managers are dropped by default.
+- **Exclusion list:** add domains or app names (e.g. your bank) that are never captured; secrets (API keys, private keys, credit-card numbers) and password managers are dropped by default.
 - **Delete anything:** one memory (delete icon on any evidence row), or all of it (Forget all).
 
 ## Quickstart
@@ -100,6 +100,19 @@ py -m hindsight.capture              # start remembering  (Ctrl+Break pauses)
 py -m hindsight.app                  # ask questions → http://localhost:8787
 ```
 
+## Testing
+
+```powershell
+py scripts\smoke_test.py    # add -> search -> forget round-trip (self-cleaning)
+py scripts\api_test.py      # 38 checks: every endpoint's happy path + malformed
+                             # inputs (no 500s), evidence-field shape, XSS-escape
+                             # logic, 5-way concurrency
+py scripts\demo_check.py    # the scripted DEMO.md queries still return their
+                             # expected evidence, plus time-scope + digest checks
+```
+
+Full results (every check, with evidence) are in [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md).
+
 ## How it uses Supermemory Local
 
 Every captured event (window focus, clipboard snippet, page visit, optional
@@ -118,12 +131,26 @@ Supermemory Local isn't a feature of Hindsight; it's the reason it can exist.
 
 ## Changelog
 
+**Pre-submission verification (July 11)**
+- Added `scripts/api_test.py` (38 checks: every endpoint's happy path + abuse
+  cases, evidence-field shape, XSS-escape logic, 5-way concurrency) and
+  `scripts/demo_check.py` (scripted demo anchors + time-scope + digest);
+  full results in `docs/TEST_REPORT.md`.
+- Hardened evidence/live-feed rendering against injected content (`esc()` now
+  escapes quotes so attribute-context breakout isn't possible); verified live
+  in-browser with an XSS payload — zero execution, in the thread, evidence
+  list, and live feed.
+- Privacy filter now also drops credit-card-shaped clipboard content (was
+  only catching API keys/tokens/private keys).
+- Fixed `scripts/smoke_test.py` to match the current client API (was calling
+  a removed method) and made it self-cleaning.
+
 **Feature sprint (July 11) — deeper Supermemory usage + the privacy story**
 - **Live capture feed** — `GET /api/recent`; a drawer tails the newest memories in real time (copy → appears → ask).
 - **Time-scoped questions** — Today / Yesterday / This week filter chips; `/api/ask` filters `/v4/search` candidates by `captured_at`.
 - **Daily digest** — `POST /api/digest`; "Summarize my day" narrates a day's memories grouped by site/app, with an instant extractive fallback.
 - **Privacy control center** — pause capture, per-source toggles, per-domain exclusions (`/api/settings` + a shared state file the daemon honors), and per-memory delete (`/api/forget_one`).
-- Fixed `scripts/smoke_test.py` (now asserts + self-cleans) and seeded the demo container to **540 memories**.
+- Seeded the demo container to **540 memories**.
 
 **Initial build (July 9–10)**
 - Windows capture daemon (window titles, clipboard, Chromium history, opt-in on-device screenshot OCR) with privacy filters.
