@@ -10,7 +10,7 @@ Hindsight quietly watches what you do on your machine (window titles, clipboard,
 
 Think Microsoft Recall — except **nothing ever leaves your machine**. No cloud, no telemetry, no trust required. Turn off your Wi-Fi and it keeps working. That's the whole point.
 
-Built for the **Supermemory localhost:6767 hackathon** (July 9–13, 2026).
+Built for the **Supermemory localhost:6767 hackathon** (July 9–17, 2026).
 
 ---
 
@@ -43,10 +43,16 @@ Supermemory Local makes that possible: embeddings, storage, and hybrid semantic 
 
 ## Features
 
-- **Ask your past** — natural-language questions answered by a local model, every claim backed by an evidence timeline with timestamps, sources, and relevance bars.
+- **Ask your past** — natural-language questions answered by a local model (Ollama + qwen2.5:3b), every claim backed by an evidence timeline with timestamps, sources, and relevance bars.
+- **Win+H overlay** — a compact floating search bar you can summon from anywhere (mid-game, mid-meeting) without alt-tabbing. The answer box border changes color by evidence kind (pink = OCR, green = browser, orange = clipboard, blue = window).
 - **Live capture feed** — a drawer that tails the newest memories by insertion time; copy something and watch it appear in real time, then ask about it.
+- **Memory timeline** — full scrollable history of every captured memory, filterable by kind (clipboard / window / browser / OCR); delete individual memories inline.
+- **Conversation history** — past Q&A sessions persist across page reloads (localStorage); auto-suggest surfaces previous questions as you type.
 - **Time-scoped recall** — filter chips (Today / Yesterday / This week / All time) filter candidates by each memory's `captured_at` before answering.
+- **Activity sparkline** — 7-day capture-per-day bar chart in the hero; today's bar is pink. A pulsing "N captured today →" chip opens the timeline.
 - **Daily digest** — "Summarize my day" narrates a whole day's memories, grouped by site and app, each line backed by evidence.
+- **Manual add** — "Add memory" dialog lets you insert notes, code, URLs, or any text directly — useful when you want to remember something the daemon didn't capture.
+- **OCR on by default** — on-device screenshot OCR (Windows OCR API) captures screen text on every window focus, so image-heavy content gets indexed automatically.
 - **Privacy control center** — pause capture, per-source toggles (browser / window / clipboard / OCR), per-domain exclusions, per-memory delete, and one-click Forget-all. Your memory, your rules.
 - **100% local & offline** — on-device embeddings + storage + search via Supermemory Local, and a local LLM. Turn the Wi-Fi off; it still works.
 
@@ -98,6 +104,10 @@ scripts\start_supermemory.ps1        # → http://localhost:6767
 pip install -r requirements.txt
 py -m hindsight.capture              # start remembering  (Ctrl+Break pauses)
 py -m hindsight.app                  # ask questions → http://localhost:8787
+
+# Optional: Win+H floating overlay (install extra deps first)
+pip install pystray keyboard Pillow
+py -m hindsight.overlay              # adds tray icon; Win+H opens a search bar
 ```
 
 ## Testing
@@ -130,6 +140,14 @@ Everything runs on `localhost:6767`, so it keeps working with the Wi‑Fi off.
 Supermemory Local isn't a feature of Hindsight; it's the reason it can exist.
 
 ## Changelog
+
+**Extension sprint (July 14–17)**
+- **OCR on by default** — enabled in `config.toml` and state defaults; daemon gate updated.
+- **Win+H tray overlay** — `hindsight.overlay`: compact floating search bar (pystray + keyboard + tkinter); answer box shows a colored left-border strip keyed to top evidence kind (pink=OCR, green=browser, orange=clipboard, blue=window).
+- **Memory timeline drawer** — full scrollable history filtered by kind chip (All / Clipboard / Window / Browser / OCR); inline delete via `POST /api/forget_one`.
+- **Conversation history** — Q&A sessions persist in localStorage (`hs_history`); auto-suggest surfaces past questions while typing (zero backend changes).
+- **Activity sparkline** — 7-day CSS bar chart in hero; today's column is pink; pulsing "N captured today →" chip opens the timeline.
+- **Manual add** — `POST /api/add` endpoint + "Add memory" Material dialog (5 kind chips, optional source URL); judges can seed memories without the daemon.
 
 **Pre-submission verification (July 11)**
 - Added `scripts/api_test.py` (38 checks: every endpoint's happy path + abuse

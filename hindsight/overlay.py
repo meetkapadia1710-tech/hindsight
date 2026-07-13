@@ -122,6 +122,11 @@ class OverlayWindow:
         self.answer_frame = tk.Frame(inner, bg=self.BG)
         self.answer_frame.pack(fill="both", expand=True, pady=(8, 0))
 
+        # Colored left-border strip — color set in _show() based on evidence kind
+        self.answer_strip = tk.Frame(self.answer_frame, bg=self.ACC, width=3)
+        self.answer_strip.pack(side="left", fill="y")
+        self.answer_strip.pack_propagate(False)
+
         self.answer_text = tk.Text(
             self.answer_frame, font=self.FONT, bg="#242424", fg=self.FG,
             relief="flat", wrap="word", state="disabled",
@@ -159,6 +164,16 @@ class OverlayWindow:
         answer = result.get("answer") or "(no answer)"
         engine = result.get("engine") or ""
         evidence = result.get("evidence") or []
+
+        # Color left border by top evidence kind
+        _kind_colors = {
+            "ocr": "#f06292",
+            "browser": "#66bb6a",
+            "clipboard": "#ffb74d",
+            "window": "#90caf9",
+        }
+        top_kind = (evidence[0].get("kind") or "") if evidence else ""
+        self.answer_strip.configure(bg=_kind_colors.get(top_kind, self.ACC))
 
         self._set_status(f"answered by {engine}")
         self._set_answer(answer)

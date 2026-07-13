@@ -524,6 +524,19 @@ INDEX_HTML = r"""<!doctype html>
   .spark-today .spark-day { color: var(--primary); }
   .spark-zero .spark-bar { opacity: .15; }
 
+  /* -- today capture count chip ---------------------------------------------- */
+  .today-chip-row { display: flex; justify-content: center; padding: 10px 0 0; }
+  .today-chip-btn { display: inline-flex; align-items: center; gap: 6px; height: 28px;
+    padding: 0 14px; border-radius: 14px; border: 1px solid rgba(240,98,146,.45);
+    background: rgba(240,98,146,.10); color: var(--k-ocr); font: 500 12px/1 var(--font);
+    cursor: pointer; transition: background .15s, border-color .15s; white-space: nowrap; }
+  .today-chip-btn:hover { background: rgba(240,98,146,.18); border-color: var(--k-ocr); }
+  .today-chip-btn:focus-visible { outline: 2px solid var(--k-ocr); outline-offset: 2px; }
+  .today-chip-btn .tc-dot { width: 7px; height: 7px; border-radius: 50%;
+    background: var(--k-ocr); animation: tcpulse 2s ease-in-out infinite; }
+  @keyframes tcpulse { 0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:.5; transform:scale(.7); } }
+
   /* -- OCR capture snackbar (Material snackbar, bottom-center) -------------- */
   .snack { position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%) translateY(16px);
     background: var(--surface-12); color: var(--text-primary); border-radius: var(--radius);
@@ -606,6 +619,13 @@ INDEX_HTML = r"""<!doctype html>
     <h1>Ask your past.</h1>
     <p>Everything you've seen, copied, and read — searchable, and 100% local.</p>
     <div class="sparkline" id="sparkline" aria-label="Activity last 7 days" role="img" title="Captures per day — click to view timeline"></div>
+    <div class="today-chip-row" id="todaychip-row" style="display:none">
+      <button class="today-chip-btn ripple-host state-layer" id="todaychip" onclick="openTimeline()" aria-label="Open timeline">
+        <span class="tc-dot"></span>
+        <span id="todaychip-text">0 captured today</span>
+        <span style="opacity:.55;font-size:11px">→</span>
+      </button>
+    </div>
     <div class="chips" id="chips">
       <div class="chip ripple-host state-layer" tabindex="1">What was I working on this morning?</div>
       <div class="chip ripple-host state-layer" tabindex="2">What articles did I read about embeddings?</div>
@@ -1213,6 +1233,16 @@ async function loadSparkline() {
         <div class="spark-day">${isToday?'Today':DAY[b.date.getDay()]}</div>
       </div>`;
     }).join('');
+    // update today chip
+    const todayCount = (buckets.find(b => b.date.getTime() === todayTime) || {count:0}).count;
+    const chipRow = document.getElementById('todaychip-row');
+    if (todayCount > 0) {
+      document.getElementById('todaychip-text').textContent =
+        `${todayCount} captured today`;
+      chipRow.style.display = 'flex';
+    } else {
+      chipRow.style.display = 'none';
+    }
   } catch { sparklineEl.style.display = 'none'; }
 }
 loadSparkline(); setInterval(loadSparkline, 30000);
