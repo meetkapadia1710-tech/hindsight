@@ -165,15 +165,10 @@ class OverlayWindow:
         engine = result.get("engine") or ""
         evidence = result.get("evidence") or []
 
-        # Color left border by top evidence kind
-        _kind_colors = {
-            "ocr": "#f06292",
-            "browser": "#66bb6a",
-            "clipboard": "#ffb74d",
-            "window": "#90caf9",
-        }
+        # Color left border by top evidence kind (pink for OCR, blue for default)
         top_kind = (evidence[0].get("kind") or "") if evidence else ""
-        self.answer_strip.configure(bg=_kind_colors.get(top_kind, self.ACC))
+        border_color = "#f06292" if top_kind == "ocr" else "#90caf9"
+        self.answer_strip.configure(bg=border_color)
 
         self._set_status(f"answered by {engine}")
         self._set_answer(answer)
@@ -198,6 +193,7 @@ class OverlayWindow:
         self.status.configure(text=msg)
 
     def _clear_answer(self) -> None:
+        self.answer_strip.configure(bg=self.ACC)
         self.answer_text.configure(state="normal")
         self.answer_text.delete("1.0", "end")
         self.answer_text.configure(state="disabled")

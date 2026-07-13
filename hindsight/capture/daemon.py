@@ -60,7 +60,7 @@ class CaptureDaemon:
 
         self.ingestor.start()
         self._install_signal_handlers()
-        print(f"[hindsight] capturing → {self.client.base_url} "
+        print(f"[hindsight] capturing -> {self.client.base_url} "
               f"(container: {self.client.container_tag})")
         print("[hindsight] Ctrl+C to stop. Send SIGBREAK to toggle pause.")
 

@@ -287,7 +287,7 @@ def main() -> None:
     import uvicorn
 
     a = CONFIG["app"]
-    print(f"[hindsight] query app → http://{a['host']}:{a['port']}")
+    print(f"[hindsight] query app -> http://{a['host']}:{a['port']}")
     uvicorn.run(app, host=a["host"], port=int(a["port"]), log_level="warning")
 
 
