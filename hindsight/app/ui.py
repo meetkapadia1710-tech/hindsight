@@ -100,7 +100,6 @@ INDEX_HTML = r"""<!doctype html>
     -webkit-backdrop-filter: blur(20px) saturate(1.6);
     border-bottom: 1px solid rgba(255,255,255,.08);
     position: sticky; top: 0; z-index: 10; overflow: hidden;
-    animation: fade-in .3s ease both;
   }
   .logo { font-size: 22px; font-weight: 600; letter-spacing: -.04em; color: var(--text-primary);
     flex: none; white-space: nowrap; }
@@ -143,7 +142,7 @@ INDEX_HTML = r"""<!doctype html>
   .status-dot.off { background: var(--error); }
 
   /* ── Layout ─────────────────────────────────────────────────────────────────── */
-  main { max-width: 780px; margin: 0 auto; padding: 40px 24px 160px; }
+  main { max-width: 780px; margin: 0 auto; padding: 40px 24px 180px; }
 
   /* ── Hero ────────────────────────────────────────────────────────────────────── */
   .hero { text-align: center; padding: 56px 0 12px; }
@@ -177,7 +176,7 @@ INDEX_HTML = r"""<!doctype html>
 
   /* ── Chat thread ─────────────────────────────────────────────────────────────── */
   .thread { display: flex; flex-direction: column; gap: 20px; margin-top: 12px; }
-  .msg { display: flex; gap: 14px; animation: fade-up .3s cubic-bezier(.22,1,.36,1) both; }
+  .msg { display: flex; gap: 14px; }
   .msg .who { width: 34px; height: 34px; border-radius: 50%; flex: none;
     display: grid; place-items: center; font: 600 13px/1 var(--font); flex-shrink: 0; }
   .msg.user .who { background: linear-gradient(135deg,var(--secondary),#a855f7); color: #fff; }
@@ -198,8 +197,7 @@ INDEX_HTML = r"""<!doctype html>
   .evidence h4 { margin: 0 0 8px; font: 600 10px/1 var(--font); text-transform: uppercase;
     letter-spacing: 1.8px; color: var(--text-disabled); }
   .ev { display: flex; align-items: flex-start; gap: 12px; padding: 10px 8px;
-    border-radius: 10px; cursor: default;
-    animation: fade-up .22s cubic-bezier(.22,1,.36,1) both; transition: background .15s; }
+    border-radius: 10px; cursor: default; transition: background .15s; }
   .ev:hover { background: rgba(255,255,255,.04); }
   .ev:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
   .ev .body { flex: 1; min-width: 0; }
@@ -227,10 +225,9 @@ INDEX_HTML = r"""<!doctype html>
     background: rgba(13,15,26,.80); backdrop-filter: blur(24px) saturate(1.8);
     -webkit-backdrop-filter: blur(24px) saturate(1.8);
     border-top: 1px solid rgba(255,255,255,.08);
-    padding: 14px 24px; padding-bottom: max(14px, env(safe-area-inset-bottom));
-    animation: fade-in .4s ease both; }
+    padding: 16px 24px 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
   .composer .box { max-width: 780px; margin: 0 auto; display: flex; gap: 12px; align-items: center; }
-  .scopes { gap: 6px; justify-content: flex-start; flex-wrap: wrap; margin-bottom: 10px; }
+  .scopes { display: flex; gap: 6px; justify-content: flex-start; flex-wrap: wrap; margin-bottom: 10px; }
   .scope-chip { height: 28px; padding: 0 14px; border-radius: 14px;
     border: 1px solid rgba(255,255,255,.10); background: transparent; color: var(--text-secondary);
     font: 500 12px/1 var(--font); cursor: pointer; display: inline-flex; align-items: center;
@@ -521,6 +518,59 @@ INDEX_HTML = r"""<!doctype html>
   .snack.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
   .snack .sk { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--k-ocr); }
 </style>
+<script type="module">
+/* Motion One — transforms only, never set opacity as initial keyframe
+   so elements stay visible even if the module is slow to load.          */
+let _animate, _stagger;
+try {
+  const m = await import("https://cdn.jsdelivr.net/npm/motion@11/+esm");
+  _animate = m.animate; _stagger = m.stagger;
+} catch(e) { /* CDN unavailable — graceful degrade, page already visible */ }
+
+if (_animate) {
+  const a = _animate, s = _stagger;
+  const spring = [.22,1,.36,1];
+
+  /* Entry: translate only — elements stay fully visible at all times */
+  a("header",        { y:[-10,0] }, { duration:.35, easing:spring });
+  a(".hero h1",      { y:[22,0], scale:[.96,1] }, { duration:.55, easing:spring, delay:.06 });
+  a(".hero p",       { y:[14,0] }, { duration:.4,  easing:spring, delay:.16 });
+  a(".sparkline",    { y:[12,0] }, { duration:.4,  easing:spring, delay:.22 });
+  a(".today-chip-row",{ y:[8,0] }, { duration:.35, easing:spring, delay:.28 });
+  a(".chips .chip",  { y:[10,0] }, { duration:.32, easing:spring, delay: s(.045,{start:.3}) });
+  a(".digest-row",   { y:[8,0]  }, { duration:.32, easing:spring, delay:.48 });
+  a(".composer",     { y:[20,0] }, { duration:.4,  easing:spring, delay:.1  });
+
+  /* Scope chip: spring press */
+  document.querySelectorAll(".scope-chip").forEach(btn => {
+    btn.addEventListener("pointerdown", () =>
+      a(btn, { scale:[1,.88,1] }, { duration:.3, easing:spring })
+    );
+  });
+  document.addEventListener("click", e => {
+    const chip = e.target.closest(".scope-chip");
+    if (chip) a(chip, { scale:[1,.88,1.06,1] }, { duration:.38, easing:spring });
+    const c = e.target.closest(".chip,.digest-chip,.today-chip-btn");
+    if (c) a(c, { scale:[1,.92,1] }, { duration:.28, easing:spring });
+  });
+
+  /* New chat messages / evidence — translate in as DOM nodes arrive */
+  const onNode = node => {
+    if (node.nodeType !== 1) return;
+    if (node.classList?.contains("msg") || node.classList?.contains("ev"))
+      a(node, { y:[16,0], scale:[.98,1] }, { duration:.32, easing:spring });
+    if (node.classList?.contains("live-item"))
+      a(node, { x:[-14,0], scale:[.97,1] }, { duration:.3, easing:spring });
+  };
+  const obs = new MutationObserver(muts =>
+    muts.forEach(m => m.addedNodes.forEach(onNode))
+  );
+  const thread = document.getElementById("thread");
+  const livelist = document.getElementById("livelist");
+  if (thread)   obs.observe(thread,   { childList:true, subtree:true });
+  if (livelist) obs.observe(livelist, { childList:true });
+}
+</script>
 </head>
 <body>
 <header>
@@ -702,7 +752,7 @@ INDEX_HTML = r"""<!doctype html>
   </div>
 </aside>
 <div class="composer">
-  <div class="box scopes" id="scopes" role="group" aria-label="Time scope">
+  <div class="scopes" id="scopes" role="group" aria-label="Time scope">
     <button class="scope-chip ripple-host active" data-scope="all">All time</button>
     <button class="scope-chip ripple-host" data-scope="today">Today</button>
     <button class="scope-chip ripple-host" data-scope="yesterday">Yesterday</button>
