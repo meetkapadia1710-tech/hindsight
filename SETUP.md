@@ -70,6 +70,19 @@ py -m hindsight.capture      # start remembering (Ctrl+C to stop, Ctrl+Break to 
 py -m hindsight.app          # ask questions → http://localhost:8787
 ```
 
+## Win+H system-tray overlay (optional)
+
+A compact floating search window you can summon from anywhere — mid-game,
+mid-meeting, mid-anything — without alt-tabbing to the browser.
+
+```powershell
+pip install pystray keyboard Pillow   # one-time
+py -m hindsight.overlay               # adds tray icon; Win+H opens the overlay
+```
+
+Press **Win+H** to open, type a question, Enter to search, Escape to close.
+Right-click the tray icon → **Quit** to stop.
+
 ## Seeding demo data (optional)
 
 Want data to query without waiting for capture? Two scripts insert memories
