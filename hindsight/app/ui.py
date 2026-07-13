@@ -145,64 +145,70 @@ INDEX_HTML = r"""<!doctype html>
   main { max-width: 780px; margin: 0 auto; padding: 40px 24px 180px; }
 
   /* ── Hero ────────────────────────────────────────────────────────────────────── */
-  .hero { text-align: center; padding: 56px 0 12px; }
+  /* ── Hero ──────────────────────────────────────────────────────────────────── */
+  .hero { text-align: center; padding: 48px 0 0; }
   .hero.hiding { animation: hero-exit .28s ease-in forwards; overflow: hidden; }
   .hero h1 {
     font-weight: 700; font-size: clamp(2rem, 5vw + .5rem, 2.8rem); line-height: 1.15;
-    letter-spacing: -.04em; margin-bottom: 12px;
+    letter-spacing: -.04em; margin: 0 0 10px;
     background: linear-gradient(135deg, #e8eaed 0%, var(--primary) 55%, var(--secondary) 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-  .hero p { font: 400 17px/1.6 var(--font); color: var(--text-secondary); margin: 0; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 28px; }
-  .chip { display: inline-flex; align-items: center; height: 36px; padding: 0 18px;
-    border-radius: 18px; border: 1px solid rgba(255,255,255,.12);
-    background: rgba(255,255,255,.05); color: var(--text-secondary);
-    font: 400 13px/1 var(--font); cursor: pointer;
+  .hero p { font: 400 16px/1.6 var(--font); color: var(--text-secondary); margin: 0; }
+  .sparkline { display: flex; gap: 5px; align-items: flex-end; justify-content: center;
+    padding: 24px 0 0; height: 70px; }
+  .today-chip-row { display: flex; justify-content: center; padding: 10px 0 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 22px; }
+  .chip { display: inline-flex; align-items: center; height: 34px; padding: 0 16px;
+    border-radius: 17px; border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.04); color: var(--text-secondary);
+    font: 400 13px/1 var(--font); cursor: pointer; white-space: nowrap;
     transition: background .18s, border-color .18s, color .18s, transform .14s, box-shadow .18s; }
-  .chip:hover { background: rgba(138,180,248,.14); border-color: rgba(138,180,248,.4);
-    color: var(--primary); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+  .chip:hover { background: rgba(138,180,248,.13); border-color: rgba(138,180,248,.4);
+    color: var(--primary); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.3); }
   .chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-  .digest-row { display: flex; justify-content: center; margin-top: 20px; }
-  .digest-chip { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 22px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, rgba(138,180,248,.18), rgba(197,138,249,.12));
-    border: 1px solid rgba(138,180,248,.3);
+  .digest-row { display: flex; justify-content: center; margin-top: 16px; padding-bottom: 4px; }
+  .digest-chip { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 20px;
+    border-radius: 19px;
+    background: linear-gradient(135deg, rgba(138,180,248,.15), rgba(197,138,249,.10));
+    border: 1px solid rgba(138,180,248,.28);
     color: var(--primary); font: 500 13px/1 var(--font); cursor: pointer;
     transition: background .18s, box-shadow .18s, transform .14s; }
-  .digest-chip:hover { background: linear-gradient(135deg, rgba(138,180,248,.26), rgba(197,138,249,.18));
-    box-shadow: 0 0 24px rgba(138,180,248,.2); transform: translateY(-1px); }
+  .digest-chip:hover { background: linear-gradient(135deg, rgba(138,180,248,.24), rgba(197,138,249,.16));
+    box-shadow: 0 0 20px rgba(138,180,248,.18); transform: translateY(-1px); }
   .digest-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
   /* ── Chat thread ─────────────────────────────────────────────────────────────── */
-  .thread { display: flex; flex-direction: column; gap: 20px; margin-top: 12px; }
-  .msg { display: flex; gap: 14px; }
-  .msg .who { width: 34px; height: 34px; border-radius: 50%; flex: none;
-    display: grid; place-items: center; font: 600 13px/1 var(--font); flex-shrink: 0; }
+  .thread { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
+  .msg { display: flex; gap: 12px; align-items: flex-start; }
+  .msg .who { width: 32px; height: 32px; border-radius: 50%; flex: none; flex-shrink: 0;
+    display: grid; place-items: center; font: 600 12px/1 var(--font); margin-top: 2px; }
   .msg.user .who { background: linear-gradient(135deg,var(--secondary),#a855f7); color: #fff; }
   .msg.ai .who { background: linear-gradient(135deg,var(--primary),#4f9ef8); color: var(--primary-on);
-    box-shadow: 0 0 0 3px rgba(138,180,248,.2); }
-  .bubble { background: var(--surface-02); border-radius: var(--radius-card);
-    padding: 16px 20px; flex: 1; min-width: 0; white-space: pre-wrap;
-    overflow-wrap: anywhere; font: 400 15px/1.65 var(--font); color: var(--text-primary);
+    box-shadow: 0 0 0 3px rgba(138,180,248,.18); }
+  .bubble { background: var(--surface-02); border-radius: 14px;
+    padding: 14px 18px; flex: 1; min-width: 0; white-space: pre-wrap;
+    overflow-wrap: anywhere; font: 400 14px/1.7 var(--font); color: var(--text-primary);
     box-shadow: var(--elevation-1); transition: box-shadow .2s; }
-  .msg.ai .bubble { border-left: 3px solid rgba(138,180,248,.4); }
+  .msg.ai .bubble { border-left: 3px solid rgba(138,180,248,.35); }
   .msg.ai .bubble:hover { box-shadow: var(--elevation-2); }
   .msg.user .bubble { background: var(--surface-04); box-shadow: none; }
-  .engine { font: 400 11px/1.4 var(--font); color: var(--text-disabled); margin-top: 10px;
+  .engine { font: 400 11px/1.4 var(--font); color: var(--text-disabled); margin-top: 8px;
     display: flex; align-items: center; gap: 5px; }
 
   /* ── Evidence ────────────────────────────────────────────────────────────────── */
-  .evidence { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--divider); }
-  .evidence h4 { margin: 0 0 8px; font: 600 10px/1 var(--font); text-transform: uppercase;
+  .evidence { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--divider); }
+  .evidence h4 { margin: 0 0 6px; font: 600 10px/1 var(--font); text-transform: uppercase;
     letter-spacing: 1.8px; color: var(--text-disabled); }
-  .ev { display: flex; align-items: flex-start; gap: 12px; padding: 10px 8px;
-    border-radius: 10px; cursor: default; transition: background .15s; }
-  .ev:hover { background: rgba(255,255,255,.04); }
+  .ev { display: flex; align-items: flex-start; gap: 10px; padding: 8px 6px;
+    border-radius: 8px; cursor: default; transition: background .15s;
+    border-bottom: 1px solid rgba(255,255,255,.05); }
+  .ev:last-child { border-bottom: none; }
+  .ev:hover { background: rgba(255,255,255,.035); }
   .ev:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
   .ev .body { flex: 1; min-width: 0; }
   .ev .content { font: 400 13px/1.5 var(--font); color: var(--text-primary); overflow-wrap: anywhere; }
-  .ev .meta { font: 400 11px/1.4 var(--font); color: var(--text-secondary); margin-top: 3px;
+  .ev .meta { font: 400 11px/1.4 var(--font); color: var(--text-secondary); margin-top: 2px;
     overflow-wrap: anywhere; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
   .ev .meta a { overflow-wrap: anywhere; color: var(--primary); }
   .kdot { width: 7px; height: 7px; border-radius: 50%; flex: none; display: inline-block; }
@@ -211,23 +217,24 @@ INDEX_HTML = r"""<!doctype html>
   .kdot.k-clipboard{ background: var(--k-clip); }
   .kdot.k-ocr      { background: var(--k-ocr); }
   .kind-label { font: 600 9px/1 var(--font); text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-disabled); }
-  .ev .relev { flex: none; align-self: center; display: flex; align-items: center; gap: 7px;
+  .ev .relev { flex: none; align-self: center; display: flex; align-items: center; gap: 6px;
     font: 400 10px/1 var(--font); color: var(--text-secondary); }
-  .ev .relev .bar { width: 44px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.10); overflow: hidden; }
+  .ev .relev .bar { width: 40px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.10); overflow: hidden; }
   .ev .relev .bar > span { display: block; height: 100%; background: var(--primary); border-radius: 2px; }
   .ev-del { flex: none; align-self: center; background: transparent; border: none; cursor: pointer;
-    color: transparent; padding: 6px; border-radius: 50%; display: inline-flex; transition: background .12s, color .12s; }
+    color: transparent; padding: 5px; border-radius: 50%; display: inline-flex; transition: background .12s, color .12s; }
   .ev:hover .ev-del { color: var(--text-disabled); }
   .ev-del:hover { background: rgba(242,139,130,.14); color: var(--error) !important; }
 
   /* ── Composer ────────────────────────────────────────────────────────────────── */
   .composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
-    background: rgba(13,15,26,.80); backdrop-filter: blur(24px) saturate(1.8);
+    background: rgba(13,15,26,.85); backdrop-filter: blur(24px) saturate(1.8);
     -webkit-backdrop-filter: blur(24px) saturate(1.8);
-    border-top: 1px solid rgba(255,255,255,.08);
-    padding: 16px 24px 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
-  .composer .box { max-width: 780px; margin: 0 auto; display: flex; gap: 12px; align-items: center; }
-  .scopes { display: flex; gap: 6px; justify-content: flex-start; flex-wrap: wrap; margin-bottom: 10px; }
+    border-top: 1px solid rgba(255,255,255,.07);
+    padding: 12px 24px 16px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .composer-inner { max-width: 780px; margin: 0 auto; }
+  .composer .box { display: flex; gap: 10px; align-items: center; }
+  .scopes { display: flex; gap: 6px; justify-content: flex-start; flex-wrap: wrap; margin-bottom: 8px; }
   .scope-chip { height: 28px; padding: 0 14px; border-radius: 14px;
     border: 1px solid rgba(255,255,255,.10); background: transparent; color: var(--text-secondary);
     font: 500 12px/1 var(--font); cursor: pointer; display: inline-flex; align-items: center;
@@ -238,22 +245,17 @@ INDEX_HTML = r"""<!doctype html>
   .scope-tag { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
     font: 600 10px/1 var(--font); text-transform: uppercase; letter-spacing: 1.2px; color: var(--primary); }
   .scope-tag .kdot { background: var(--primary); }
+  /* ── Search pill — clean placeholder, no floating label ──────────────────── */
   .field { position: relative; flex: 1; display: flex; align-items: center;
-    background: var(--surface-04); border-radius: 28px; border: 1px solid rgba(255,255,255,.12);
-    transition: border-color .2s, box-shadow .2s, background .2s; }
-  .field:focus-within { border-color: rgba(138,180,248,.7); background: var(--surface-06);
-    box-shadow: 0 0 0 3px rgba(138,180,248,.14), 0 8px 24px rgba(0,0,0,.4); }
+    background: var(--surface-04); border-radius: 28px; border: 1px solid rgba(255,255,255,.11);
+    transition: border-color .2s, box-shadow .2s, background .2s; overflow: hidden; }
+  .field:focus-within { border-color: rgba(138,180,248,.6); background: var(--surface-06);
+    box-shadow: 0 0 0 3px rgba(138,180,248,.12), 0 8px 20px rgba(0,0,0,.35); }
   input[type=text] { flex: 1; background: transparent; border: none; outline: none;
-    padding: 14px 20px; color: var(--text-primary); font: 400 15px/1.4 var(--font); }
-  input[type=text]::placeholder { color: transparent; }
-  .field label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
-    font: 400 15px/1.4 var(--font); color: var(--text-disabled);
-    background: transparent; padding: 0; pointer-events: none;
-    transition: top .15s, font-size .15s, color .15s; }
-  input[type=text]:focus ~ label,
-  input[type=text]:not(:placeholder-shown) ~ label {
-    top: -1px; font-size: 11px; color: var(--primary);
-    background: var(--surface-06); padding: 0 6px; border-radius: 4px; }
+    padding: 13px 20px; color: var(--text-primary); font: 400 15px/1 var(--font); }
+  input[type=text]::placeholder { color: var(--text-disabled); }
+  /* hide the label — we use placeholder text directly */
+  .field label { display: none; }
   .send { height: 44px; padding: 0 22px; border: none; border-radius: 22px;
     background: linear-gradient(135deg, var(--primary), #4f9ef8);
     color: var(--primary-on); font: 600 13px/1 var(--font); letter-spacing: .04em;
@@ -453,7 +455,6 @@ INDEX_HTML = r"""<!doctype html>
     cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background .1s; }
   .suggest-item:hover { background: rgba(255,255,255,.07); }
   .suggest-icon { flex: none; color: var(--text-secondary); }
-  .composer { position: relative; }
   .kind-icon { font-size: 12px; flex: none; }
 
   /* ── Add Memory dialog ───────────────────────────────────────────────────────── */
@@ -752,6 +753,7 @@ if (_animate) {
   </div>
 </aside>
 <div class="composer">
+  <div class="composer-inner">
   <div class="scopes" id="scopes" role="group" aria-label="Time scope">
     <button class="scope-chip ripple-host active" data-scope="all">All time</button>
     <button class="scope-chip ripple-host" data-scope="today">Today</button>
@@ -761,14 +763,15 @@ if (_animate) {
   <div class="box">
     <div class="field" style="position:relative">
       <div class="suggest-list" id="suggestlist" role="listbox" aria-label="Suggestions"></div>
-      <input id="q" type="text" placeholder=" " autocomplete="off" tabindex="5" aria-autocomplete="list" aria-controls="suggestlist" />
-      <label for="q">Ask about anything you've done on this machine…</label>
+      <input id="q" type="text" placeholder="Ask about anything you've done on this machine…" autocomplete="off" tabindex="5" aria-autocomplete="list" aria-controls="suggestlist" aria-label="Search your memory" />
+      <label for="q" aria-hidden="true"></label>
     </div>
     <button class="send ripple-host state-layer" id="send" tabindex="6" aria-label="Recall">
       <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       <span class="send-label">Recall</span>
     </button>
   </div>
+  </div><!-- /composer-inner -->
 </div>
 <div id="snack" class="snack" role="status" aria-live="polite"><span class="sk"></span><span id="snackmsg"></span></div>
 <script>
