@@ -64,9 +64,8 @@ INDEX_HTML = r"""<!doctype html>
       radial-gradient(ellipse 80% 60% at 20% 10%, rgba(144,202,249,.055) 0%, transparent 60%),
       radial-gradient(ellipse 60% 50% at 80% 90%, rgba(206,147,216,.04) 0%, transparent 55%);
   }
-  /* Everything above the orbs */
-  header, main, .composer, .live-drawer, .sheet-scrim,
-  aside, .snack, .menu, .add-dialog-wrap { position: relative; z-index: 1; }
+  /* Ensure content sits above the orb layer without overriding position values */
+  main { isolation: isolate; }
 
   /* -- ripple: Material's signature interaction -------------------------- */
   .ripple-host { position: relative; overflow: hidden; }
