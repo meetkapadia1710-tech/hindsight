@@ -149,6 +149,35 @@ def recent(limit: int = 10) -> JSONResponse:
     return JSONResponse({"memories": [_entry_to_memory(e) for e in entries]})
 
 
+class AddRequest(BaseModel):
+    content: str
+    kind: str = "note"
+    source: str = ""
+
+
+@app.post("/api/add")
+def add_memory(req: AddRequest) -> JSONResponse:
+    content = (req.content or "").strip()
+    if not content:
+        return JSONResponse({"error": "content required"}, status_code=400)
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    source = (req.source or req.kind).strip()
+    try:
+        result = client.add_memory(
+            content=content,
+            metadata={
+                "kind": req.kind,
+                "source": source,
+                "captured_at": now,
+                "title": content[:200],
+            },
+        )
+        return JSONResponse({"ok": True, "result": result})
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=502)
+
+
 @app.post("/api/forget_all")
 def forget_all() -> JSONResponse:
     try:

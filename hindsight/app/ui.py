@@ -484,6 +484,46 @@ INDEX_HTML = r"""<!doctype html>
   /* -- kind icons in evidence + feed ---------------------------------------- */
   .kind-icon { font-size: 12px; flex: none; }
 
+  /* -- add-note dialog ------------------------------------------------------- */
+  .add-dialog { width: min(520px, 94vw); }
+  .add-ta { width: 100%; min-height: 100px; max-height: 240px; resize: vertical;
+    background: var(--surface-03); border: 1px solid var(--divider); border-radius: var(--radius);
+    color: var(--text-primary); font: 400 15px/1.5 var(--font); padding: 12px 14px;
+    outline: none; transition: border-color .15s; box-sizing: border-box; }
+  .add-ta:focus { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+  .add-ta::placeholder { color: var(--text-disabled); }
+  .add-label { font: 500 11px/1 var(--font); text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-secondary); margin: 14px 0 8px; display: block; }
+  .add-kinds { display: flex; gap: 6px; flex-wrap: wrap; }
+  .add-kind { height: 28px; padding: 0 12px; border-radius: var(--radius-chip);
+    border: 1px solid var(--divider); background: transparent; color: var(--text-secondary);
+    font: 500 12px/1 var(--font); cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+    transition: background-color .15s, border-color .15s, color .15s; }
+  .add-kind:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+  .add-kind.active { background: rgba(144,202,249,.16); border-color: var(--primary); color: var(--primary); }
+  .add-src { width: 100%; background: var(--surface-03); border: 1px solid var(--divider);
+    border-radius: var(--radius); color: var(--text-primary); font: 400 14px/1 var(--font);
+    padding: 9px 12px; outline: none; box-sizing: border-box; transition: border-color .15s; }
+  .add-src:focus { border-color: var(--primary); }
+  .add-src::placeholder { color: var(--text-disabled); }
+
+  /* -- activity sparkline ---------------------------------------------------- */
+  .sparkline { display: flex; gap: 6px; align-items: flex-end; justify-content: center;
+    padding: 20px 0 0; height: 68px; }
+  .spark-col { display: flex; flex-direction: column; align-items: center; gap: 3px;
+    cursor: pointer; flex: 1; max-width: 52px; }
+  .spark-col:hover .spark-bar { filter: brightness(1.3); }
+  .spark-bar-wrap { flex: 1; display: flex; align-items: flex-end; width: 100%; }
+  .spark-bar { width: 100%; border-radius: 2px 2px 0 0; background: var(--primary);
+    opacity: .55; min-height: 3px; transition: height .35s ease, opacity .15s; }
+  .spark-col:hover .spark-bar { opacity: .9; }
+  .spark-day { font: 500 9px/1 var(--font); color: var(--text-disabled); text-transform: uppercase;
+    letter-spacing: .5px; white-space: nowrap; }
+  .spark-count { font: 400 10px/1 var(--font); color: var(--text-secondary); }
+  .spark-today .spark-bar { background: var(--k-ocr); opacity: .8; }
+  .spark-today .spark-day { color: var(--primary); }
+  .spark-zero .spark-bar { opacity: .15; }
+
   /* -- OCR capture snackbar (Material snackbar, bottom-center) -------------- */
   .snack { position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%) translateY(16px);
     background: var(--surface-12); color: var(--text-primary); border-radius: var(--radius);
@@ -505,17 +545,22 @@ INDEX_HTML = r"""<!doctype html>
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
     Live
   </button>
-  <button class="btn-text ripple-host state-layer appbar-action" id="timelinebtn" tabindex="8"
+  <button class="btn-text ripple-host state-layer appbar-action" id="addnotebtn" tabindex="8"
+    aria-label="Add a memory" title="Manually add any thought, note, or observation" style="color:var(--k-ocr)">
+    <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Add
+  </button>
+  <button class="btn-text ripple-host state-layer appbar-action" id="timelinebtn" tabindex="9"
     aria-label="Timeline" title="Browse memories by date">
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="17" y1="12" x2="3" y2="12"/><line x1="17" y1="6" x2="3" y2="6"/><line x1="17" y1="18" x2="3" y2="18"/><circle cx="21" cy="12" r="1"/><circle cx="21" cy="6" r="1"/><circle cx="21" cy="18" r="1"/></svg>
     Timeline
   </button>
-  <button class="btn-text ripple-host state-layer appbar-action" id="privacybtn" tabindex="9"
+  <button class="btn-text ripple-host state-layer appbar-action" id="privacybtn" tabindex="10"
     aria-label="Privacy controls" title="Pause capture, choose sources, exclude sites" style="color:var(--text-secondary)">
     <svg class="ic" id="privacyicon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     <span id="privacylabel">Privacy</span>
   </button>
-  <button class="btn-text ripple-host state-layer appbar-action" id="forget" tabindex="10"
+  <button class="btn-text ripple-host state-layer appbar-action" id="forget" tabindex="11"
     aria-label="Forget all" title="Permanently delete every stored memory">
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     Forget all
@@ -525,6 +570,10 @@ INDEX_HTML = r"""<!doctype html>
     <svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
   </button>
   <div class="menu" id="overflowmenu" role="menu" aria-hidden="true">
+    <button class="menu-item ripple-host state-layer" role="menuitem" data-act="addnote" style="color:var(--k-ocr)">
+      <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add memory
+    </button>
     <button class="menu-item ripple-host state-layer" role="menuitem" data-act="live">
       <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/></svg>
       Live capture
@@ -556,6 +605,7 @@ INDEX_HTML = r"""<!doctype html>
   <div class="hero" id="hero">
     <h1>Ask your past.</h1>
     <p>Everything you've seen, copied, and read — searchable, and 100% local.</p>
+    <div class="sparkline" id="sparkline" aria-label="Activity last 7 days" role="img" title="Captures per day — click to view timeline"></div>
     <div class="chips" id="chips">
       <div class="chip ripple-host state-layer" tabindex="1">What was I working on this morning?</div>
       <div class="chip ripple-host state-layer" tabindex="2">What articles did I read about embeddings?</div>
@@ -733,7 +783,8 @@ overflowMenu.addEventListener('click', (e) => {
   const item = e.target.closest('[data-act]'); if (!item) return;
   closeMenu();
   const act = item.dataset.act;
-  if (act === 'live') openLive();
+  if (act === 'addnote') openAddNote();
+  else if (act === 'live') openLive();
   else if (act === 'privacy') openPrivacy();
   else if (act === 'timeline') openTimeline();
   else if (act === 'history') openHistory();
@@ -1038,6 +1089,133 @@ document.querySelectorAll('.scope-chip').forEach(c => c.addEventListener('click'
   document.querySelectorAll('.scope-chip').forEach(x => x.classList.remove('active'));
   c.classList.add('active'); activeScope = c.dataset.scope;
 }));
+
+// ── ADD NOTE DIALOG ───────────────────────────────────────────────────────────
+const ADD_KINDS = [
+  { k: 'note',      icon: '📝', label: 'Note' },
+  { k: 'clipboard', icon: '📋', label: 'Clipboard' },
+  { k: 'window',    icon: '🪟', label: 'Window' },
+  { k: 'browser',   icon: '🌐', label: 'Browser' },
+  { k: 'ocr',       icon: '📸', label: 'OCR' },
+];
+
+function openAddNote() {
+  let selectedKind = 'note';
+  const scrim = document.createElement('div'); scrim.className = 'm-scrim';
+  scrim.innerHTML = `
+    <div class="m-dialog add-dialog" role="dialog" aria-modal="true" aria-label="Add a memory">
+      <div class="m-dialog-title">Add a memory</div>
+      <div class="m-dialog-body" style="padding-bottom:0">
+        <textarea class="add-ta" id="add-ta" placeholder="What did you see, think, or do? Anything you want to remember later…" rows="4" autofocus></textarea>
+        <span class="add-label">Source type</span>
+        <div class="add-kinds" id="add-kinds">
+          ${ADD_KINDS.map(k => `<button class="add-kind ripple-host${k.k==='note'?' active':''}" data-k="${esc(k.k)}">${k.icon} ${k.label}</button>`).join('')}
+        </div>
+        <span class="add-label" style="margin-top:12px">App or site name <span style="color:var(--text-disabled);font-weight:400;text-transform:none">(optional)</span></span>
+        <input class="add-src" id="add-src" type="text" placeholder="e.g. Chrome, VS Code, github.com" autocomplete="off" />
+        <div id="add-err" style="color:var(--error);font-size:12px;min-height:18px;margin-top:6px"></div>
+      </div>
+      <div class="m-dialog-actions">
+        <button class="m-text-btn ripple-host" data-a="cancel">Cancel</button>
+        <button class="m-text-btn ripple-host" data-a="save" style="color:var(--primary)">Save memory</button>
+      </div>
+    </div>`;
+  document.body.appendChild(scrim);
+  wireRipples(scrim);
+
+  const ta = scrim.querySelector('#add-ta');
+  const srcIn = scrim.querySelector('#add-src');
+  const errEl = scrim.querySelector('#add-err');
+  const kindsEl = scrim.querySelector('#add-kinds');
+
+  kindsEl.addEventListener('click', e => {
+    const btn = e.target.closest('[data-k]'); if (!btn) return;
+    kindsEl.querySelectorAll('.add-kind').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedKind = btn.dataset.k;
+  });
+
+  const focusables = [ta, srcIn, scrim.querySelector('[data-a="cancel"]'), scrim.querySelector('[data-a="save"]')];
+  ta.focus();
+
+  function trapTab(e) {
+    if (e.key !== 'Tab') return;
+    e.preventDefault();
+    const i = focusables.indexOf(document.activeElement);
+    const next = e.shiftKey
+      ? focusables[(i <= 0 ? focusables.length : i) - 1]
+      : focusables[(i + 1) % focusables.length];
+    next.focus();
+  }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  function close() {
+    scrim.remove();
+    document.removeEventListener('keydown', onKey);
+    document.removeEventListener('keydown', trapTab);
+  }
+  document.addEventListener('keydown', onKey);
+  document.addEventListener('keydown', trapTab);
+
+  scrim.addEventListener('click', async e => {
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    if (a.dataset.a === 'cancel') { close(); return; }
+    // Save
+    const content = ta.value.trim();
+    if (!content) { errEl.textContent = 'Please write something first.'; ta.focus(); return; }
+    a.disabled = true; a.textContent = 'Saving…';
+    try {
+      const r = await fetch('/api/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ content, kind: selectedKind, source: srcIn.value.trim() }),
+      });
+      const j = await r.json();
+      if (j.error) { errEl.textContent = j.error; a.disabled = false; a.textContent = 'Save memory'; return; }
+      close();
+      showSnack('Memory saved · ' + content.slice(0, 50) + (content.length > 50 ? '…' : ''));
+      refreshStats();
+      if (liveOpen) { seenIds = new Set(); livePrimed = false; lastSig = ''; pollRecent(); }
+    } catch(err) { errEl.textContent = 'Save failed: ' + err; a.disabled = false; a.textContent = 'Save memory'; }
+  });
+}
+
+$('#addnotebtn').addEventListener('click', openAddNote);
+
+// ── ACTIVITY SPARKLINE ────────────────────────────────────────────────────────
+const sparklineEl = document.getElementById('sparkline');
+
+async function loadSparkline() {
+  try {
+    const r = await fetch('/api/recent?limit=500'); const j = await r.json();
+    const ms = j.memories || [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    // Build 7-day buckets (today is last)
+    const buckets = [];
+    for (let d = 6; d >= 0; d--) {
+      const day = new Date(today); day.setDate(today.getDate() - d);
+      buckets.push({ date: day, count: 0 });
+    }
+    ms.forEach(m => {
+      if (!m.captured_at) return;
+      const t = new Date(m.captured_at); t.setHours(0,0,0,0);
+      const b = buckets.find(b => b.date.getTime() === t.getTime());
+      if (b) b.count++;
+    });
+    const max = Math.max(1, ...buckets.map(b => b.count));
+    const DAY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const todayTime = today.getTime();
+    sparklineEl.innerHTML = buckets.map(b => {
+      const isToday = b.date.getTime() === todayTime;
+      const pct = Math.max(4, Math.round((b.count / max) * 100));
+      return `<div class="spark-col${isToday?' spark-today':''}${b.count===0?' spark-zero':''}" title="${b.date.toLocaleDateString(undefined,{month:'short',day:'numeric'})}: ${b.count} captures" onclick="openTimeline()">
+        <div class="spark-count">${b.count||''}</div>
+        <div class="spark-bar-wrap"><div class="spark-bar" style="height:${pct}%"></div></div>
+        <div class="spark-day">${isToday?'Today':DAY[b.date.getDay()]}</div>
+      </div>`;
+    }).join('');
+  } catch { sparklineEl.style.display = 'none'; }
+}
+loadSparkline(); setInterval(loadSparkline, 30000);
 
 // ── KIND ICONS ──────────────────────────────────────────────────────────────
 const KIND_ICON = { clipboard:'📋', window:'🪟', browser:'🌐', ocr:'📸' };
