@@ -439,6 +439,51 @@ INDEX_HTML = r"""<!doctype html>
     .switch input { top: -12px; left: -6px; width: 48px; height: 44px; }
   }
 
+  /* -- timeline drawer ------------------------------------------------------- */
+  .tl-filter { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 8px 4px; border-bottom: 1px solid var(--divider); }
+  .tl-chip { height: 24px; padding: 0 10px; border-radius: var(--radius-chip); border: 1px solid var(--divider);
+    background: transparent; color: var(--text-secondary); font: 500 11px/1 var(--font); letter-spacing: .02em;
+    cursor: pointer; display: inline-flex; align-items: center;
+    transition: background-color .15s, border-color .15s, color .15s; }
+  .tl-chip:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+  .tl-chip.active { background: rgba(144,202,249,.16); border-color: var(--primary); color: var(--primary); }
+  .tl-day { font: 500 10px/1 var(--font); text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--text-secondary); padding: 14px 12px 6px; position: sticky; top: 0;
+    background: var(--surface-00); z-index: 1; }
+  .tl-item { padding: 10px 12px; border-bottom: 1px solid var(--divider); }
+  .tl-item:last-child { border-bottom: none; }
+  .tl-content { font: 400 13px/1.4 var(--font); color: var(--text-primary); overflow-wrap: anywhere; }
+  .tl-meta { font: 400 11px/1 var(--font); color: var(--text-secondary); margin-top: 4px;
+    display: flex; align-items: center; gap: 6px; }
+
+  /* -- history drawer -------------------------------------------------------- */
+  .hist-day { font: 500 10px/1 var(--font); text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--text-secondary); padding: 14px 12px 6px; }
+  .hist-item { padding: 10px 12px; border-radius: var(--radius); margin: 2px 8px;
+    cursor: pointer; transition: background-color .15s; }
+  .hist-item:hover { background: rgba(255,255,255,.06); }
+  .hist-q { font: 500 13px/1.3 var(--font); color: var(--text-primary); overflow-wrap: anywhere; }
+  .hist-a { font: 400 12px/1.3 var(--font); color: var(--text-secondary); margin-top: 3px;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .hist-ts { font: 400 10px/1 var(--font); color: var(--text-disabled); margin-top: 4px; }
+  .hist-clear { margin: 12px; }
+  .hist-empty { color: var(--text-secondary); font-size: 13px; text-align: center; padding: 24px 12px; }
+
+  /* -- auto-suggest ---------------------------------------------------------- */
+  .suggest-list { position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+    background: var(--surface-08); border-radius: var(--radius); box-shadow: var(--elevation-8);
+    overflow: hidden; display: none; }
+  .suggest-list.show { display: block; }
+  .suggest-item { padding: 10px 16px; font: 400 14px/1.4 var(--font); color: var(--text-primary);
+    cursor: pointer; display: flex; align-items: center; gap: 10px;
+    transition: background-color .1s; }
+  .suggest-item:hover { background: rgba(255,255,255,.08); }
+  .suggest-icon { flex: none; color: var(--text-secondary); }
+  .composer { position: relative; }
+
+  /* -- kind icons in evidence + feed ---------------------------------------- */
+  .kind-icon { font-size: 12px; flex: none; }
+
   /* -- OCR capture snackbar (Material snackbar, bottom-center) -------------- */
   .snack { position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%) translateY(16px);
     background: var(--surface-12); color: var(--text-primary); border-radius: var(--radius);
@@ -460,12 +505,17 @@ INDEX_HTML = r"""<!doctype html>
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
     Live
   </button>
-  <button class="btn-text ripple-host state-layer appbar-action" id="privacybtn" tabindex="8"
+  <button class="btn-text ripple-host state-layer appbar-action" id="timelinebtn" tabindex="8"
+    aria-label="Timeline" title="Browse memories by date">
+    <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="17" y1="12" x2="3" y2="12"/><line x1="17" y1="6" x2="3" y2="6"/><line x1="17" y1="18" x2="3" y2="18"/><circle cx="21" cy="12" r="1"/><circle cx="21" cy="6" r="1"/><circle cx="21" cy="18" r="1"/></svg>
+    Timeline
+  </button>
+  <button class="btn-text ripple-host state-layer appbar-action" id="privacybtn" tabindex="9"
     aria-label="Privacy controls" title="Pause capture, choose sources, exclude sites" style="color:var(--text-secondary)">
     <svg class="ic" id="privacyicon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     <span id="privacylabel">Privacy</span>
   </button>
-  <button class="btn-text ripple-host state-layer appbar-action" id="forget" tabindex="9"
+  <button class="btn-text ripple-host state-layer appbar-action" id="forget" tabindex="10"
     aria-label="Forget all" title="Permanently delete every stored memory">
     <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     Forget all
@@ -478,6 +528,14 @@ INDEX_HTML = r"""<!doctype html>
     <button class="menu-item ripple-host state-layer" role="menuitem" data-act="live">
       <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/></svg>
       Live capture
+    </button>
+    <button class="menu-item ripple-host state-layer" role="menuitem" data-act="timeline">
+      <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="17" y1="12" x2="3" y2="12"/><line x1="17" y1="6" x2="3" y2="6"/><line x1="17" y1="18" x2="3" y2="18"/><circle cx="21" cy="12" r="1"/><circle cx="21" cy="6" r="1"/><circle cx="21" cy="18" r="1"/></svg>
+      Timeline
+    </button>
+    <button class="menu-item ripple-host state-layer" role="menuitem" data-act="history">
+      <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></svg>
+      History
     </button>
     <button class="menu-item ripple-host state-layer" role="menuitem" data-act="privacy">
       <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -562,6 +620,43 @@ INDEX_HTML = r"""<!doctype html>
     <div id="excllist"></div>
   </div>
 </aside>
+<aside class="live-drawer" id="timelinedrawer" aria-label="Memory timeline" aria-hidden="true">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <div class="live-head">
+    <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--primary)"><line x1="17" y1="12" x2="3" y2="12"/><line x1="17" y1="6" x2="3" y2="6"/><line x1="17" y1="18" x2="3" y2="18"/><circle cx="21" cy="12" r="1"/><circle cx="21" cy="6" r="1"/><circle cx="21" cy="18" r="1"/></svg>
+    <div class="grow">
+      <div class="live-title">Timeline</div>
+      <div class="live-sub" id="tlsub">recent memories by date</div>
+    </div>
+    <button class="live-close" id="tlclose" aria-label="Close timeline">
+      <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="tl-filter" id="tlfilter">
+    <button class="tl-chip active" data-tf="all">All</button>
+    <button class="tl-chip" data-tf="clipboard">📋 Clipboard</button>
+    <button class="tl-chip" data-tf="window">🪟 Window</button>
+    <button class="tl-chip" data-tf="browser">🌐 Browser</button>
+    <button class="tl-chip" data-tf="ocr">📸 OCR</button>
+  </div>
+  <div class="live-list" id="tllist" aria-live="polite"></div>
+</aside>
+<aside class="live-drawer priv-drawer" id="historydrawer" aria-label="Search history" aria-hidden="true">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <div class="live-head">
+    <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--primary)"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></svg>
+    <div class="grow">
+      <div class="live-title">History</div>
+      <div class="live-sub" id="histsub">your past searches</div>
+    </div>
+    <button class="live-close" id="histclose" aria-label="Close history">
+      <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="priv-body" id="histbody">
+    <div class="hist-empty">No history yet — ask a question to get started.</div>
+  </div>
+</aside>
 <div class="composer">
   <div class="box scopes" id="scopes" role="group" aria-label="Time scope">
     <button class="scope-chip ripple-host active" data-scope="all">All time</button>
@@ -570,8 +665,9 @@ INDEX_HTML = r"""<!doctype html>
     <button class="scope-chip ripple-host" data-scope="week">This week</button>
   </div>
   <div class="box">
-    <div class="field">
-      <input id="q" type="text" placeholder=" " autocomplete="off" tabindex="5" />
+    <div class="field" style="position:relative">
+      <div class="suggest-list" id="suggestlist" role="listbox" aria-label="Suggestions"></div>
+      <input id="q" type="text" placeholder=" " autocomplete="off" tabindex="5" aria-autocomplete="list" aria-controls="suggestlist" />
       <label for="q">Ask about anything you've done on this machine…</label>
     </div>
     <button class="send ripple-host state-layer" id="send" tabindex="6" aria-label="Recall">
@@ -639,6 +735,8 @@ overflowMenu.addEventListener('click', (e) => {
   const act = item.dataset.act;
   if (act === 'live') openLive();
   else if (act === 'privacy') openPrivacy();
+  else if (act === 'timeline') openTimeline();
+  else if (act === 'history') openHistory();
   else if (act === 'forget') forgetAll();
 });
 
@@ -699,7 +797,7 @@ async function pollRecent(){
         const k = m.kind || 'window';
         return `<div class="live-item${isNew ? ' fresh' : ''}">
           <div class="lc">${esc(m.content)}</div>
-          <div class="lm"><span class="kdot k-${esc(k)}"></span><span class="kind-label">${esc(KIND_LABEL[k]||k)}</span> · ${esc(relTime(m.captured_at))}</div>
+          <div class="lm"><span class="kdot k-${esc(k)}"></span><span class="kind-icon">${KIND_ICON[k]||''}</span><span class="kind-label">${esc(KIND_LABEL[k]||k)}</span> · ${esc(relTime(m.captured_at))}</div>
         </div>`;
       }).join('') : '<div class="live-empty">No memories yet — start the capture daemon, or copy some text and watch it appear.</div>';
       lastSig = sig;
@@ -711,7 +809,7 @@ async function pollRecent(){
 }
 const sheetScrim = $('#sheetscrim');
 function openLive(){
-  closePrivacy();
+  closePrivacy(); closeTimeline(); closeHistory();
   liveOpen = true; liveDrawer.classList.add('open'); liveDrawer.setAttribute('aria-hidden','false');
   sheetScrim.classList.add('show');   // dims content behind the bottom sheet (phone only, via CSS)
   seenIds = new Set(); livePrimed = false; lastSig = '';
@@ -774,7 +872,7 @@ $('#excllist').addEventListener('click', e => {
   const b = e.target.closest('[data-x]'); if (!b) return;
   saveSettings({ exclusions: (settings.exclusions||[]).filter(x => x !== b.dataset.x) });
 });
-function openPrivacy(){ closeLive(); privDrawer.classList.add('open'); privDrawer.setAttribute('aria-hidden','false'); loadSettings(); }
+function openPrivacy(){ closeLive(); closeTimeline(); closeHistory(); privDrawer.classList.add('open'); privDrawer.setAttribute('aria-hidden','false'); loadSettings(); }
 function closePrivacy(){ privDrawer.classList.remove('open'); privDrawer.setAttribute('aria-hidden','true'); }
 $('#privacybtn').addEventListener('click', () => privDrawer.classList.contains('open') ? closePrivacy() : openPrivacy());
 $('#privclose').addEventListener('click', closePrivacy);
@@ -871,7 +969,7 @@ function renderEvidence(ev, note){
     const del = e.id ? `<button class="ev-del" data-del="${esc(e.id)}" aria-label="Forget this memory" title="Forget this memory"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>` : '';
     return `<div class="ev ripple-host state-layer" tabindex="0" data-id="${esc(e.id||'')}"><div class="body">
       <div class="content">${esc(e.content)}</div>
-      <div class="meta"><span class="kdot k-${esc(k)}"></span><span class="kind-label">${esc(label)}</span> · ${when}${src? ' · '+src : ''}</div></div>
+      <div class="meta"><span class="kdot k-${esc(k)}"></span><span class="kind-icon">${KIND_ICON[k]||''}</span><span class="kind-label">${esc(label)}</span> · ${when}${src? ' · '+src : ''}</div></div>
       ${relev}${del}</div>`;
   }).join('');
   const word = note === undefined ? 'matching ' : (note ? note + ' ' : '');
@@ -882,6 +980,7 @@ async function ask(text){
   addUser(text); $('#hero').style.display='none';
   const bubble = addAI().querySelector('.bubble');
   send.disabled = true;
+  hideSuggest();
   try {
     const r = await fetch('/api/ask', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({question: text, scope: activeScope})});
@@ -894,6 +993,7 @@ async function ask(text){
         + `<div class="engine">answered by ${esc(j.engine)}</div>`
         + renderEvidence(j.evidence);
       wireRipples(bubble);
+      saveToHistory(text, j.answer || '', j.engine || '', j.evidence || [], j.scope || 'all');
     }
   } catch(e){ bubble.textContent = 'Request failed: ' + e; }
   send.disabled = false; scroll();
@@ -938,6 +1038,199 @@ document.querySelectorAll('.scope-chip').forEach(c => c.addEventListener('click'
   document.querySelectorAll('.scope-chip').forEach(x => x.classList.remove('active'));
   c.classList.add('active'); activeScope = c.dataset.scope;
 }));
+
+// ── KIND ICONS ──────────────────────────────────────────────────────────────
+const KIND_ICON = { clipboard:'📋', window:'🪟', browser:'🌐', ocr:'📸' };
+
+// ── TIMELINE ─────────────────────────────────────────────────────────────────
+const tlDrawer = $('#timelinedrawer'), tlList = $('#tllist');
+let tlOpen = false, tlFilter = 'all', tlMemories = [];
+
+function tlGroupByDay(ms) {
+  const days = {};
+  ms.forEach(m => {
+    const d = m.captured_at ? new Date(m.captured_at).toLocaleDateString(undefined,
+      {weekday:'long', year:'numeric', month:'long', day:'numeric'}) : 'Unknown date';
+    (days[d] = days[d] || []).push(m);
+  });
+  return days;
+}
+
+function tlRender() {
+  const filtered = tlFilter === 'all' ? tlMemories : tlMemories.filter(m => m.kind === tlFilter);
+  if (!filtered.length) {
+    tlList.innerHTML = `<div class="live-empty">${tlFilter === 'all' ? 'No memories yet.' : 'No ' + tlFilter + ' memories.'}</div>`;
+    return;
+  }
+  const days = tlGroupByDay(filtered);
+  tlList.innerHTML = Object.entries(days).map(([day, items]) =>
+    `<div class="tl-day">${esc(day)}</div>` +
+    items.map(m => {
+      const k = m.kind || 'window';
+      const icon = KIND_ICON[k] || '';
+      const time = m.captured_at ? new Date(m.captured_at).toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'}) : '';
+      return `<div class="tl-item">
+        <div class="tl-content">${esc(m.content)}</div>
+        <div class="tl-meta"><span class="kdot k-${esc(k)}"></span><span class="kind-icon">${icon}</span><span class="kind-label">${esc(KIND_LABEL[k]||k)}</span>${time ? ' · '+esc(time) : ''}</div>
+      </div>`;
+    }).join('')
+  ).join('');
+  $('#tlsub').textContent = filtered.length + ' memories';
+}
+
+async function loadTimeline() {
+  try {
+    const r = await fetch('/api/recent?limit=150'); const j = await r.json();
+    tlMemories = j.memories || [];
+    tlRender();
+  } catch { tlList.innerHTML = '<div class="live-empty">Could not load memories.</div>'; }
+}
+
+$('#tlfilter').addEventListener('click', e => {
+  const chip = e.target.closest('[data-tf]'); if (!chip) return;
+  $('#tlfilter').querySelectorAll('.tl-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  tlFilter = chip.dataset.tf;
+  tlRender();
+});
+
+function closeAllDrawers() { closeLive(); closePrivacy(); closeTimeline(); closeHistory(); }
+function openTimeline() {
+  closeAllDrawers();
+  tlOpen = true; tlDrawer.classList.add('open'); tlDrawer.setAttribute('aria-hidden','false');
+  sheetScrim.classList.add('show');
+  loadTimeline();
+}
+function closeTimeline() {
+  tlOpen = false; tlDrawer.classList.remove('open'); tlDrawer.setAttribute('aria-hidden','true');
+  sheetScrim.classList.remove('show');
+}
+$('#timelinebtn').addEventListener('click', () => tlOpen ? closeTimeline() : openTimeline());
+$('#tlclose').addEventListener('click', closeTimeline);
+tlDrawer.querySelector('.sheet-handle').addEventListener('click', closeTimeline);
+
+// ── CONVERSATION HISTORY ──────────────────────────────────────────────────────
+const HIST_KEY = 'hs_history';
+const histDrawer = $('#historydrawer'), histBody = $('#histbody');
+let histOpen = false;
+
+function histLoad() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; } }
+function histSave(items) { try { localStorage.setItem(HIST_KEY, JSON.stringify(items.slice(0, 200))); } catch {} }
+
+function saveToHistory(q, answer, engine, evidence, scope) {
+  const items = histLoad();
+  items.unshift({ q, answer: answer.slice(0, 300), engine, evidence: evidence.slice(0,3), scope, ts: new Date().toISOString() });
+  histSave(items);
+}
+
+function histRender() {
+  const items = histLoad();
+  $('#histsub').textContent = items.length ? items.length + ' saved searches' : 'your past searches';
+  if (!items.length) {
+    histBody.innerHTML = '<div class="hist-empty">No history yet — ask a question to get started.</div>';
+    return;
+  }
+  const days = {};
+  items.forEach(it => {
+    const d = new Date(it.ts).toLocaleDateString(undefined, {weekday:'long', month:'short', day:'numeric'});
+    (days[d] = days[d] || []).push(it);
+  });
+  histBody.innerHTML = Object.entries(days).map(([day, its]) =>
+    `<div class="hist-day">${esc(day)}</div>` +
+    its.map((it, i) => `<div class="hist-item" data-hi="${esc(it.ts)}">
+      <div class="hist-q">${esc(it.q)}</div>
+      <div class="hist-a">${esc(it.answer)}</div>
+      <div class="hist-ts">${new Date(it.ts).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})} · ${esc(it.engine)}</div>
+    </div>`).join('')
+  ).join('') +
+  `<div class="hist-clear"><button class="m-text-btn ripple-host" id="histclearbtn" style="color:var(--error)">Clear history</button></div>`;
+  wireRipples(histBody);
+}
+
+function replayHistory(it) {
+  closeHistory();
+  addUser(it.q); $('#hero').style.display = 'none';
+  const bubble = addAI().querySelector('.bubble');
+  const scopeName = {today:'Today', yesterday:'Yesterday', week:'This week'}[it.scope];
+  const scopeTag = scopeName ? `<div class="scope-tag"><span class="kdot"></span>Scope · ${scopeName}</div>` : '';
+  bubble.innerHTML = esc(it.answer) + scopeTag +
+    `<div class="engine">answered by ${esc(it.engine)}</div>` +
+    renderEvidence(it.evidence || []);
+  wireRipples(bubble); scroll();
+}
+
+histBody.addEventListener('click', e => {
+  if (e.target.id === 'histclearbtn') {
+    histSave([]);
+    histRender();
+    return;
+  }
+  const item = e.target.closest('[data-hi]'); if (!item) return;
+  const ts = item.dataset.hi;
+  const it = histLoad().find(x => x.ts === ts);
+  if (it) replayHistory(it);
+});
+
+function openHistory() {
+  closeAllDrawers();
+  histOpen = true; histDrawer.classList.add('open'); histDrawer.setAttribute('aria-hidden','false');
+  sheetScrim.classList.add('show');
+  histRender();
+}
+function closeHistory() {
+  histOpen = false; histDrawer.classList.remove('open'); histDrawer.setAttribute('aria-hidden','true');
+  sheetScrim.classList.remove('show');
+}
+$('#histclose').addEventListener('click', closeHistory);
+histDrawer.querySelector('.sheet-handle').addEventListener('click', closeHistory);
+
+// Also close timeline/history when scrim clicked
+sheetScrim.removeEventListener('click', closeLive);
+sheetScrim.addEventListener('click', () => { closeLive(); closeTimeline(); closeHistory(); });
+
+// ── AUTO-SUGGEST ─────────────────────────────────────────────────────────────
+const suggestList = $('#suggestlist');
+let suggestTimer = null;
+
+function hideSuggest() { suggestList.classList.remove('show'); suggestList.innerHTML = ''; }
+
+function showSuggest(matches) {
+  if (!matches.length) { hideSuggest(); return; }
+  suggestList.innerHTML = matches.map(q =>
+    `<div class="suggest-item" tabindex="-1" data-sq="${esc(q)}">
+      <svg class="suggest-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      ${esc(q)}
+    </div>`
+  ).join('');
+  suggestList.classList.add('show');
+}
+
+input.addEventListener('input', () => {
+  clearTimeout(suggestTimer);
+  const v = input.value.trim().toLowerCase();
+  if (v.length < 2) { hideSuggest(); return; }
+  suggestTimer = setTimeout(() => {
+    const past = histLoad().map(it => it.q);
+    const seen = new Set(); const matches = [];
+    past.forEach(q => {
+      const key = q.toLowerCase();
+      if (key.includes(v) && !seen.has(key)) { seen.add(key); matches.push(q); }
+    });
+    showSuggest(matches.slice(0, 4));
+  }, 280);
+});
+
+suggestList.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const item = e.target.closest('[data-sq]'); if (!item) return;
+  input.value = item.dataset.sq;
+  hideSuggest();
+  go();
+});
+
+input.addEventListener('blur', () => setTimeout(hideSuggest, 150));
+input.addEventListener('keydown', e => { if (e.key === 'Escape') hideSuggest(); });
+
 </script>
 </body>
 </html>
