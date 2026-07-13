@@ -23,7 +23,7 @@ STATE_FILE = STATE_DIR / "state.json"
 
 DEFAULTS: dict[str, Any] = {
     "paused": False,
-    "sources": {"browser": True, "window": True, "clipboard": True, "ocr": False},
+    "sources": {"browser": True, "window": True, "clipboard": True, "ocr": True},
     "exclusions": [],
 }
 

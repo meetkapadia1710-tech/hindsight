@@ -114,7 +114,7 @@ class CaptureDaemon:
                     kind="window", content=win.title, source=win.app,
                     metadata={"app": win.app},
                 ))
-                if (self.do_ocr and self._srcs.get("ocr", False)
+                if (self.do_ocr and self._srcs.get("ocr", True)
                         and (now - self._last_ocr) >= self.ocr_min_interval):
                     self._last_ocr = now
                     self._ocr_current_window(win)

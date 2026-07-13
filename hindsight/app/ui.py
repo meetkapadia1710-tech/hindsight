@@ -438,6 +438,16 @@ INDEX_HTML = r"""<!doctype html>
     /* switch: grow the invisible input hit area without moving the visible track */
     .switch input { top: -12px; left: -6px; width: 48px; height: 44px; }
   }
+
+  /* -- OCR capture snackbar (Material snackbar, bottom-center) -------------- */
+  .snack { position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%) translateY(16px);
+    background: var(--surface-12); color: var(--text-primary); border-radius: var(--radius);
+    box-shadow: var(--elevation-8); padding: 10px 16px; font: 400 13px/1.4 var(--font);
+    max-width: min(480px, 90vw); display: flex; align-items: center; gap: 10px;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+    z-index: 50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .snack.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .snack .sk { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--k-ocr); }
 </style>
 </head>
 <body>
@@ -542,7 +552,7 @@ INDEX_HTML = r"""<!doctype html>
     <div class="priv-row"><div class="grow">Browser history<div class="sub">pages you visit</div></div><label class="switch"><input type="checkbox" data-src="browser" aria-label="Capture browser history"><span class="track"></span><span class="thumb"></span></label></div>
     <div class="priv-row"><div class="grow">Window titles<div class="sub">apps and files in focus</div></div><label class="switch"><input type="checkbox" data-src="window" aria-label="Capture window titles"><span class="track"></span><span class="thumb"></span></label></div>
     <div class="priv-row"><div class="grow">Clipboard<div class="sub">text you copy</div></div><label class="switch"><input type="checkbox" data-src="clipboard" aria-label="Capture clipboard"><span class="track"></span><span class="thumb"></span></label></div>
-    <div class="priv-row"><div class="grow">Screen OCR<div class="sub">on-screen text (opt-in)</div></div><label class="switch"><input type="checkbox" data-src="ocr" aria-label="Capture screen OCR"><span class="track"></span><span class="thumb"></span></label></div>
+    <div class="priv-row"><div class="grow">Screen OCR<div class="sub">reads on-screen text (on by default)</div></div><label class="switch"><input type="checkbox" data-src="ocr" aria-label="Capture screen OCR"><span class="track"></span><span class="thumb"></span></label></div>
     <div class="priv-divider"></div>
     <div class="priv-section-title">Never capture</div>
     <div class="priv-excl-add">
@@ -570,6 +580,7 @@ INDEX_HTML = r"""<!doctype html>
     </button>
   </div>
 </div>
+<div id="snack" class="snack" role="status" aria-live="polite"><span class="sk"></span><span id="snackmsg"></span></div>
 <script>
 const $ = s => document.querySelector(s);
 const thread = $('#thread'), input = $('#q'), send = $('#send'), header = $('header');
@@ -643,9 +654,40 @@ function relTime(iso){
   return Math.floor(s/86400) + 'd ago';
 }
 
+// -- OCR snackbar toast -------------------------------------------------------
+const snack = $('#snack'), snackMsg = $('#snackmsg');
+let snackTimer = null;
+function showSnack(text) {
+  snackMsg.textContent = text;
+  snack.classList.add('show');
+  clearTimeout(snackTimer);
+  snackTimer = setTimeout(() => snack.classList.remove('show'), 3500);
+}
+
 // -- live capture feed: poll newest memories while the drawer is open -----
 const liveDrawer = $('#livedrawer'), liveList = $('#livelist');
 let liveOpen = false, liveTimer = null, seenIds = new Set(), livePrimed = false, lastSig = '';
+
+// Background OCR-toast poll: runs always, shows snack when the drawer is closed
+let bgSeenIds = new Set(), bgPrimed = false;
+async function pollBg(){
+  try {
+    const r = await fetch('/api/recent?limit=6'); const j = await r.json();
+    const ms = j.memories || [];
+    if (bgPrimed && !liveOpen) {
+      const newOcr = ms.filter(m => m.kind === 'ocr' && !bgSeenIds.has(m.id));
+      if (newOcr.length) {
+        const preview = newOcr[0].content.slice(0, 60) + (newOcr[0].content.length > 60 ? '…' : '');
+        showSnack('Screen captured · ' + preview);
+      }
+    }
+    ms.forEach(m => bgSeenIds.add(m.id));
+    bgPrimed = true;
+  } catch {}
+}
+setInterval(pollBg, 8000);
+pollBg();
+
 async function pollRecent(){
   try {
     const r = await fetch('/api/recent?limit=12'); const j = await r.json();
