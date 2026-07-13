@@ -160,7 +160,7 @@ Full results (every check, with evidence) are in [`docs/TEST_REPORT.md`](docs/TE
 
 ## Team
 
-Meet Kapadia — solo build.
+Meet Kapadia — solo.
 
 ## License
 
