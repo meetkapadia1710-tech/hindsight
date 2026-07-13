@@ -53,9 +53,20 @@ INDEX_HTML = r"""<!doctype html>
   body {
     margin: 0; background: var(--bg); color: var(--text-primary);
     font: 400 14px/1.5 var(--font); min-height: 100vh; min-height: 100dvh;
-    overflow-x: clip;   /* long URLs / off-canvas panels never scroll the page sideways */
+    overflow-x: clip;
     -webkit-font-smoothing: antialiased;
   }
+  /* Ambient depth gradient — two soft orbs that give the flat dark bg depth */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(144,202,249,.055) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 90%, rgba(206,147,216,.04) 0%, transparent 55%);
+  }
+  /* Everything above the orbs */
+  header, main, .composer, .live-drawer, .sheet-scrim,
+  aside, .snack, .menu, .add-dialog-wrap { position: relative; z-index: 1; }
 
   /* -- ripple: Material's signature interaction -------------------------- */
   .ripple-host { position: relative; overflow: hidden; }
@@ -76,15 +87,20 @@ INDEX_HTML = r"""<!doctype html>
     .live-drawer { transition: none !important; }
   }
 
+  html { scroll-behavior: smooth; }
+
   /* -- app bar: flush at rest, elevates once content scrolls under it ----- */
   header {
     display: flex; align-items: center; gap: 16px; height: 64px; padding: 0 24px;
-    background: var(--surface-04); box-shadow: none; overflow: hidden;
-    position: sticky; top: 0; z-index: 10; transition: box-shadow 150ms;
+    background: rgba(30,30,30,.88); backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    box-shadow: none; overflow: hidden;
+    position: sticky; top: 0; z-index: 10; transition: box-shadow 150ms, border-color 150ms;
   }
-  header.raised { box-shadow: var(--elevation-4); }
-  .logo { font-size: 20px; font-weight: 500; color: var(--text-primary); flex: none; white-space: nowrap; }
-  .logo span { color: var(--primary); }
+  header.raised { box-shadow: var(--elevation-4); border-bottom-color: rgba(255,255,255,.10); }
+  .logo { font-size: 20px; font-weight: 500; color: var(--text-primary); flex: none; white-space: nowrap; letter-spacing: -.02em; }
+  .logo span { color: var(--primary); text-shadow: 0 0 20px rgba(144,202,249,.4); }
   .tag { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
   .hstats { margin-left: auto; color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
   @media (max-width: 600px) { .tag { display: none; } }
@@ -128,10 +144,23 @@ INDEX_HTML = r"""<!doctype html>
   .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex: none; }
   .status-dot.off { background: var(--error); }
 
-  main { max-width: 760px; margin: 0 auto; padding: 32px 24px 156px; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 24px 156px; min-height: 100vh; }
+  /* Fade-in for the whole main content on load */
+  @keyframes page-enter { from { opacity:0; } to { opacity:1; } }
+  main { animation: page-enter .35s ease both; }
 
   /* -- hero (h5 / subtitle1) ------------------------------------------------ */
-  .hero { text-align: center; padding: 48px 0 8px; }
+  @keyframes hero-enter {
+    from { opacity: 0; transform: translateY(16px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes hero-exit {
+    from { opacity: 1; transform: translateY(0); max-height: 600px; }
+    to   { opacity: 0; transform: translateY(-10px); max-height: 0; }
+  }
+  .hero { text-align: center; padding: 48px 0 8px;
+    animation: hero-enter .4s cubic-bezier(.22,1,.36,1) both; }
+  .hero.hiding { animation: hero-exit .25s ease-in forwards; overflow: hidden; }
   .hero h1 { font-weight: 500; font-size: clamp(1.35rem, 4vw + .5rem, 1.5rem); line-height: 1.3;
     color: var(--text-primary); margin: 0 0 8px; }
   .hero p { font: 400 16px/1.5 var(--font); color: var(--text-secondary); margin: 0; }
@@ -143,9 +172,10 @@ INDEX_HTML = r"""<!doctype html>
     border-radius: var(--radius-chip); border: 1px solid var(--divider);
     background: var(--surface-02); color: var(--text-primary);
     font: 500 14px/1 var(--font); letter-spacing: .02857em;
-    cursor: pointer; transition: background-color .15s, border-color .15s;
+    cursor: pointer; transition: background-color .15s, border-color .15s, transform .12s, box-shadow .15s;
   }
-  .chip:hover { background: var(--surface-04); border-color: var(--text-secondary); }
+  .chip:hover { background: var(--surface-04); border-color: var(--text-secondary);
+    transform: translateY(-1px); box-shadow: var(--elevation-2); }
   .chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .digest-row { display: flex; justify-content: center; margin-top: 16px; }
   .digest-chip { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 20px;
@@ -157,15 +187,23 @@ INDEX_HTML = r"""<!doctype html>
   .digest-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
   /* -- thread / avatars / cards --------------------------------------------- */
+  @keyframes msg-enter {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
   .thread { display: flex; flex-direction: column; gap: 24px; margin-top: 8px; }
-  .msg { display: flex; gap: 12px; }
+  .msg { display: flex; gap: 12px; animation: msg-enter .28s cubic-bezier(.22,1,.36,1) both; }
   .msg .who { width: 32px; height: 32px; border-radius: 50%; flex: none;
     display: grid; place-items: center; font: 500 14px/1 var(--font); }
   .msg.user .who { background: var(--secondary); color: var(--primary-on); }
-  .msg.ai .who { background: var(--primary); color: var(--primary-on); }
+  .msg.ai .who { background: var(--primary); color: var(--primary-on);
+    box-shadow: 0 0 0 3px rgba(144,202,249,.18); }
   .bubble { background: var(--surface-01); box-shadow: var(--elevation-1);
     border-radius: var(--radius); padding: 16px; flex: 1; min-width: 0; white-space: pre-wrap;
-    overflow-wrap: anywhere; font: 400 16px/1.5 var(--font); color: var(--text-primary); }
+    overflow-wrap: anywhere; font: 400 16px/1.5 var(--font); color: var(--text-primary);
+    transition: box-shadow .2s; }
+  .msg.ai .bubble { border-left: 2px solid rgba(144,202,249,.35); }
+  .msg.ai .bubble:hover { box-shadow: var(--elevation-2); }
   .msg.user .bubble { background: var(--surface-03); box-shadow: none; }
   .engine { font: 400 12px/1.4 var(--font); color: var(--text-secondary); margin-top: 12px; }
 
@@ -174,7 +212,9 @@ INDEX_HTML = r"""<!doctype html>
   .evidence h4 { margin: 0 0 4px; font: 500 10px/2 var(--font); text-transform: uppercase;
     letter-spacing: 1.5px; color: var(--text-secondary); }
   .ev { display: flex; align-items: flex-start; gap: 12px; padding: 8px;
-    border-bottom: 1px solid var(--divider); cursor: default; transition: background-color .15s; }
+    border-bottom: 1px solid var(--divider); cursor: default;
+    animation: msg-enter .22s cubic-bezier(.22,1,.36,1) both;
+    transition: background-color .15s; }
   .ev:last-child { border-bottom: 0; }
   .ev:hover { background: rgba(255,255,255,.04); }
   .ev:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
@@ -198,13 +238,18 @@ INDEX_HTML = r"""<!doctype html>
 
   /* -- composer: outlined text field w/ floating label + contained button -- */
   .composer { position: fixed; left: 0; right: 0; bottom: 0;
-    background: var(--surface-04); box-shadow: var(--elevation-4-up); z-index: 8;
-    padding: 16px 24px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+    background: rgba(30,30,30,.82); backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border-top: 1px solid rgba(255,255,255,.07);
+    box-shadow: 0 -1px 0 rgba(255,255,255,.04), var(--elevation-4-up); z-index: 8;
+    padding: 16px 24px; padding-bottom: max(16px, env(safe-area-inset-bottom));
+    transition: box-shadow .2s; }
   .composer .box { max-width: 760px; margin: 0 auto; display: flex; gap: 16px; align-items: center; }
   .field { position: relative; flex: 1; display: flex; align-items: center; background: var(--surface-02);
     border: 1px solid var(--divider); border-radius: var(--radius);
     transition: border-color .15s, box-shadow .15s; }
-  .field:focus-within { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+  .field:focus-within { border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary), 0 0 16px rgba(144,202,249,.12); }
   input[type=text] { flex: 1; background: transparent; border: none; outline: none;
     padding: 16px; color: var(--text-primary); font: 400 16px/1.4 var(--font); }
   input[type=text]::placeholder { color: transparent; }
@@ -222,8 +267,10 @@ INDEX_HTML = r"""<!doctype html>
     background: var(--primary); color: var(--primary-on);
     font: 500 14px/1 var(--font); letter-spacing: .02857em; text-transform: uppercase;
     display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-    box-shadow: var(--elevation-2); transition: box-shadow .15s, filter .15s; }
-  .send:hover { box-shadow: var(--elevation-4); filter: brightness(1.08); }
+    box-shadow: var(--elevation-2), 0 0 0 0 rgba(144,202,249,0);
+    transition: box-shadow .2s, filter .15s, transform .12s; }
+  .send:hover { box-shadow: var(--elevation-4), 0 0 20px rgba(144,202,249,.25); filter: brightness(1.08); transform: translateY(-1px); }
+  .send:active { transform: translateY(0); }
   .send:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .send:disabled { background: rgba(255,255,255,.12); color: var(--text-disabled);
     box-shadow: none; cursor: default; filter: none; }
@@ -620,7 +667,7 @@ INDEX_HTML = r"""<!doctype html>
     <p>Everything you've seen, copied, and read — searchable, and 100% local.</p>
     <div class="sparkline" id="sparkline" aria-label="Activity last 7 days" role="img" title="Captures per day — click to view timeline"></div>
     <div class="today-chip-row" id="todaychip-row" style="display:none">
-      <button class="today-chip-btn ripple-host state-layer" id="todaychip" onclick="openTimeline()" aria-label="Open timeline">
+      <button class="today-chip-btn ripple-host state-layer" id="todaychip" onclick="openTimeline('today')" aria-label="Open timeline">
         <span class="tc-dot"></span>
         <span id="todaychip-text">0 captured today</span>
         <span style="opacity:.55;font-size:11px">→</span>
@@ -1006,10 +1053,23 @@ async function forgetAll(){
   );
   if (!ok) return;
   await fetch('/api/forget_all', {method:'POST'});
-  thread.innerHTML=''; $('#hero').style.display='';
+  thread.innerHTML=''; showHero();
   refreshStats();
 }
 $('#forget').addEventListener('click', forgetAll);
+
+function hideHero() {
+  const h = $('#hero');
+  if (h.style.display === 'none') return;
+  h.classList.add('hiding');
+  setTimeout(() => { h.style.display = 'none'; h.classList.remove('hiding'); }, 240);
+}
+function showHero() {
+  const h = $('#hero');
+  h.style.display = '';
+  h.style.animation = 'none';
+  requestAnimationFrame(() => { h.style.animation = ''; });
+}
 
 function addUser(text){
   const el = document.createElement('div'); el.className = 'msg user';
@@ -1038,7 +1098,8 @@ function renderEvidence(ev, note){
       ? `<div class="relev" title="relevance ${pct}%"><div class="bar"><span style="width:${pct}%"></span></div>${pct}%</div>`
       : '';
     const del = e.id ? `<button class="ev-del" data-del="${esc(e.id)}" aria-label="Forget this memory" title="Forget this memory"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>` : '';
-    return `<div class="ev ripple-host state-layer" tabindex="0" data-id="${esc(e.id||'')}"><div class="body">
+    const i = shown.indexOf(e);
+    return `<div class="ev ripple-host state-layer" tabindex="0" data-id="${esc(e.id||'')}" style="animation-delay:${i*45}ms"><div class="body">
       <div class="content">${esc(e.content)}</div>
       <div class="meta"><span class="kdot k-${esc(k)}"></span><span class="kind-icon">${KIND_ICON[k]||''}</span><span class="kind-label">${esc(label)}</span> · ${when}${src? ' · '+src : ''}</div></div>
       ${relev}${del}</div>`;
@@ -1048,7 +1109,7 @@ function renderEvidence(ev, note){
 }
 
 async function ask(text){
-  addUser(text); $('#hero').style.display='none';
+  addUser(text); hideHero();
   const bubble = addAI().querySelector('.bubble');
   send.disabled = true;
   hideSuggest();
@@ -1070,7 +1131,7 @@ async function ask(text){
   send.disabled = false; scroll();
 }
 async function runDigest(){
-  addUser('Summarize my day'); $('#hero').style.display='none';
+  addUser('Summarize my day'); hideHero();
   const bubble = addAI().querySelector('.bubble');
   send.disabled = true;
   try {
@@ -1252,7 +1313,7 @@ const KIND_ICON = { clipboard:'📋', window:'🪟', browser:'🌐', ocr:'📸' 
 
 // ── TIMELINE ─────────────────────────────────────────────────────────────────
 const tlDrawer = $('#timelinedrawer'), tlList = $('#tllist');
-let tlOpen = false, tlFilter = 'all', tlMemories = [];
+let tlOpen = false, tlFilter = 'all', tlDateFilter = 'all', tlMemories = [];
 
 function tlGroupByDay(ms) {
   const days = {};
@@ -1265,7 +1326,15 @@ function tlGroupByDay(ms) {
 }
 
 function tlRender() {
-  const filtered = tlFilter === 'all' ? tlMemories : tlMemories.filter(m => m.kind === tlFilter);
+  let filtered = tlFilter === 'all' ? tlMemories : tlMemories.filter(m => m.kind === tlFilter);
+  if (tlDateFilter === 'today') {
+    const today = new Date(); today.setHours(0,0,0,0);
+    filtered = filtered.filter(m => {
+      if (!m.captured_at) return false;
+      const t = new Date(m.captured_at); t.setHours(0,0,0,0);
+      return t.getTime() === today.getTime();
+    });
+  }
   if (!filtered.length) {
     tlList.innerHTML = `<div class="live-empty">${tlFilter === 'all' ? 'No memories yet.' : 'No ' + tlFilter + ' memories.'}</div>`;
     return;
@@ -1283,7 +1352,11 @@ function tlRender() {
       </div>`;
     }).join('')
   ).join('');
-  $('#tlsub').textContent = filtered.length + ' memories';
+  if (tlDateFilter === 'today') {
+    $('#tlsub').innerHTML = `${filtered.length} memories today · <a href="#" onclick="event.preventDefault(); tlDateFilter='all'; tlRender();" style="color:var(--primary);text-decoration:underline;cursor:pointer;">Show all</a>`;
+  } else {
+    $('#tlsub').textContent = filtered.length + ' memories';
+  }
 }
 
 async function loadTimeline() {
@@ -1303,8 +1376,9 @@ $('#tlfilter').addEventListener('click', e => {
 });
 
 function closeAllDrawers() { closeLive(); closePrivacy(); closeTimeline(); closeHistory(); }
-function openTimeline() {
+function openTimeline(dateFilter = 'all') {
   closeAllDrawers();
+  tlDateFilter = dateFilter;
   tlOpen = true; tlDrawer.classList.add('open'); tlDrawer.setAttribute('aria-hidden','false');
   sheetScrim.classList.add('show');
   loadTimeline();
